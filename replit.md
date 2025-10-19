@@ -46,19 +46,35 @@ Participant {
    - Visual attendance summary (weeks attended / total)
    - Completion percentage display
    - Individual week marking
+   - **Bulk attendance marking** for groups and weeks
 
 3. **Filtering & Search**
    - Age group filter badges
    - Real-time text search
    - Combined filtering (age group + search)
 
-4. **Design System**
+4. **Analytics & Statistics**
+   - Comprehensive statistics dashboard
+   - Overall attendance rates and trends
+   - Weekly attendance breakdown with visual progress bars
+   - Age group performance comparison
+   - Perfect attendance recognition system
+   - Best performing week identification
+
+5. **Data Export & Printing**
+   - CSV export for participant lists
+   - CSV export for attendance reports
+   - Printable participant rosters
+   - Printable attendance sheets (landscape format)
+
+6. **Design System**
    - Soccer green primary color (#2E7D32 variants)
    - Light/Dark mode support
    - Mobile-first responsive design
    - Consistent spacing (4, 6, 8px scale)
    - Inter font family
    - Elevation system for interactions
+   - Tab-based navigation (Participants / Statistics)
 
 ### File Structure
 ```
@@ -86,12 +102,21 @@ shared/
 All participant data is stored in browser localStorage under the key `home-ground-hub-participants`. Data persists across browser sessions and includes automatic save indicators.
 
 ### Recent Changes
-- Initial implementation (October 19, 2025)
-- Complete participant CRUD with localStorage
-- Attendance tracking system with 10-week grid
-- Age group filtering and search functionality
-- Mobile-responsive card layouts
-- Dark mode support
+- **Phase 2 Features** (October 19, 2025)
+  - Added bulk attendance marking for groups and multiple weeks
+  - Implemented comprehensive statistics dashboard with analytics
+  - Added CSV export for participants and attendance data
+  - Created printable roster and attendance sheet views
+  - Enhanced UI with tab navigation (Participants / Statistics)
+  - Added perfect attendance recognition system
+  - Implemented weekly and age group performance breakdowns
+
+- **Phase 1 - Initial MVP** (October 19, 2025)
+  - Complete participant CRUD with localStorage
+  - Attendance tracking system with 10-week grid
+  - Age group filtering and search functionality
+  - Mobile-responsive card layouts
+  - Dark mode support
 
 ## User Preferences
 - Mobile-friendly interface required
