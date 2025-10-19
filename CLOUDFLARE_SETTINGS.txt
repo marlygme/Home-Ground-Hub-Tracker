@@ -1,0 +1,73 @@
+═══════════════════════════════════════════════════════════════
+  CLOUDFLARE PAGES BUILD SETTINGS - COPY THESE EXACTLY
+═══════════════════════════════════════════════════════════════
+
+When you create/configure your project in Cloudflare Pages dashboard,
+enter these EXACT values in the Build Settings section:
+
+┌─────────────────────────────────────────────────────────────┐
+│ Framework preset:                                            │
+│ None                                                         │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Build command:                                               │
+│ npm run build                                                │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Build output directory:                                      │
+│ dist/public                                                  │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Root directory (optional):                                   │
+│ (leave blank)                                                │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Environment variables:                                       │
+│ (none required - app uses localStorage)                     │
+└─────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+  CRITICAL NOTES
+═══════════════════════════════════════════════════════════════
+
+1. Output directory MUST be "dist/public" - NOT just "dist"
+   
+2. This is the folder structure after build:
+   dist/
+   ├── index.js        ← Backend server (ignore this)
+   └── public/         ← Deploy THIS folder
+       ├── index.html
+       ├── assets/
+       │   ├── index-[hash].js
+       │   └── index-[hash].css
+       └── _redirects  ← SPA routing file
+
+3. The _redirects file contains: /* /index.html 200
+   This tells Cloudflare to serve index.html for all routes
+
+4. Your app will be live at:
+   https://your-project-name.pages.dev
+
+═══════════════════════════════════════════════════════════════
+  VERIFICATION AFTER DEPLOYMENT
+═══════════════════════════════════════════════════════════════
+
+After deployment, test these:
+
+✓ Homepage loads at https://your-project-name.pages.dev/
+✓ Can add a participant with Australian phone number
+✓ Data persists after page refresh (localStorage)
+✓ Search and filter work correctly
+✓ Statistics tab shows data
+✓ No console errors in browser DevTools (F12)
+
+If you see a blank page:
+1. Check browser console for errors (F12)
+2. Verify "Build output directory" is exactly: dist/public
+3. Check Cloudflare Pages deployment logs for build errors
+
+═══════════════════════════════════════════════════════════════

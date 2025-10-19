@@ -129,22 +129,55 @@ All participant data is stored in browser localStorage under the key `home-groun
 
 ## Deployment to Cloudflare Pages
 
-This application is configured for Cloudflare Pages deployment:
+### Step-by-Step Deployment Instructions
 
-1. **Build Settings:**
-   - Build command: `npm run build`
-   - Build output directory: `dist/public`
-   - Framework preset: None (or leave blank)
+**IMPORTANT:** This is a static frontend-only app (no Node.js server needed). All data is stored in browser localStorage.
 
-2. **SPA Routing:**
-   - The `client/public/_redirects` file ensures proper client-side routing
-   - Contains: `/* /index.html 200`
-   - Automatically included in build output
+1. **Push Your Code to GitHub/GitLab**
+   - Commit all your changes
+   - Push to your repository
 
-3. **Deploy:**
-   - Connect your Git repository to Cloudflare Pages
-   - Use the build settings above
-   - All routes will work correctly with client-side routing
+2. **Create New Project in Cloudflare Pages**
+   - Go to https://dash.cloudflare.com/
+   - Navigate to "Workers & Pages" → "Create" → "Pages" → "Connect to Git"
+   - Select your repository
+
+3. **Configure Build Settings** (VERY IMPORTANT - Enter Exactly as Shown):
+   ```
+   Framework preset: None
+   Build command: npm run build
+   Build output directory: dist/public
+   ```
+
+4. **Environment Variables** (Optional)
+   - None required - app uses localStorage only
+
+5. **Deploy**
+   - Click "Save and Deploy"
+   - Wait for build to complete (usually 1-2 minutes)
+   - Your app will be live at: `your-project-name.pages.dev`
+
+### Troubleshooting
+
+**Problem: Blank page on Cloudflare Pages preview**
+- Solution: Make sure "Build output directory" is exactly `dist/public` (not `dist`)
+- The build creates two folders: `dist/index.js` (backend - ignore this) and `dist/public/` (frontend - use this)
+
+**Problem: 404 errors when refreshing the page**
+- This shouldn't happen - the `_redirects` file handles this
+- Verify the file exists: Check `dist/public/_redirects` contains `/* /index.html 200`
+- Contact Cloudflare support if issue persists
+
+**Problem: Build fails**
+- Check that Node.js version is set to 18 or higher in Cloudflare settings
+- Verify all dependencies are in `package.json`
+
+### SPA Routing Configuration
+
+- The `client/public/_redirects` file ensures proper client-side routing
+- Contains: `/* /index.html 200`
+- Automatically included in build output at `dist/public/_redirects`
+- This file tells Cloudflare Pages to serve `index.html` for all routes, allowing React Router (wouter) to handle navigation
 
 ## Phone Number Format
 
