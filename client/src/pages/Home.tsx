@@ -119,7 +119,8 @@ export default function Home() {
   };
 
   const openAttendance = (participant: Participant) => {
-    setAttendanceParticipant(participant);
+    const latestParticipant = participants.find((p) => p.id === participant.id);
+    setAttendanceParticipant(latestParticipant || participant);
     setIsAttendanceOpen(true);
   };
 

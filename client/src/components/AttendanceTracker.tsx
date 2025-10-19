@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Participant } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,6 +27,12 @@ export function AttendanceTracker({
   const [attendance, setAttendance] = useState<boolean[]>(
     participant?.attendance || Array(10).fill(false)
   );
+
+  useEffect(() => {
+    if (participant?.attendance) {
+      setAttendance(participant.attendance);
+    }
+  }, [participant]);
 
   const handleCheckboxChange = (weekIndex: number) => {
     const newAttendance = [...attendance];
