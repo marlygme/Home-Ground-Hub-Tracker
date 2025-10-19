@@ -13,6 +13,7 @@ import { X } from "lucide-react";
 
 interface AttendanceTrackerProps {
   participant: Participant | null;
+  programName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (participantId: string, attendance: boolean[]) => void;
@@ -20,12 +21,14 @@ interface AttendanceTrackerProps {
 
 export function AttendanceTracker({
   participant,
+  programName,
   open,
   onOpenChange,
   onSave,
 }: AttendanceTrackerProps) {
+  const totalWeeks = participant?.attendance.length || 10;
   const [attendance, setAttendance] = useState<boolean[]>(
-    participant?.attendance || Array(10).fill(false)
+    participant?.attendance || Array(totalWeeks).fill(false)
   );
 
   useEffect(() => {
@@ -48,6 +51,7 @@ export function AttendanceTracker({
   };
 
   const attendedWeeks = attendance.filter(Boolean).length;
+  const completionPercentage = totalWeeks > 0 ? Math.round((attendedWeeks / totalWeeks) * 100) : 0;
 
   if (!participant) return null;
 
@@ -58,6 +62,7 @@ export function AttendanceTracker({
           <DialogTitle className="text-xl font-semibold">
             Attendance Tracker - {participant.fullName}
           </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">{programName}</p>
           <Button
             size="icon"
             variant="ghost"
@@ -74,19 +79,19 @@ export function AttendanceTracker({
             <div>
               <p className="text-sm text-muted-foreground">Attendance Summary</p>
               <p className="text-2xl font-semibold" data-testid="text-attendance-summary">
-                {attendedWeeks} / 10 weeks
+                {attendedWeeks} / {totalWeeks} weeks
               </p>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Completion</p>
               <p className="text-2xl font-semibold text-primary">
-                {Math.round((attendedWeeks / 10) * 100)}%
+                {completionPercentage}%
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {Array.from({ length: 10 }, (_, i) => (
+            {Array.from({ length: totalWeeks }, (_, i) => (
               <div
                 key={i}
                 className="flex items-center space-x-2 p-3 rounded-lg border hover-elevate"

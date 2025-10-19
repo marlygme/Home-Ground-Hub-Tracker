@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Participant, InsertParticipant, ageGroups, ageGroupLabels, type AgeGroup } from "@shared/schema";
+import { Participant, InsertParticipant, Program } from "@shared/schema";
 import { localStorageService } from "@/lib/localStorage";
 import { exportToCSV, exportAttendanceToCSV } from "@/lib/exportUtils";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,17 @@ import { BulkAttendanceDialog } from "@/components/BulkAttendanceDialog";
 import { ParticipantCard } from "@/components/ParticipantCard";
 import { EmptyState } from "@/components/EmptyState";
 import { StatisticsView } from "@/components/StatisticsView";
+import { ProgramManagement } from "@/components/ProgramManagement";
 import { PrintView } from "@/components/PrintView";
 import { useTheme } from "@/components/ThemeProvider";
-import { UserPlus, Search, Moon, Sun, CheckCircle2, Download, Users2, Printer, BarChart3 } from "lucide-react";
+import { UserPlus, Search, Moon, Sun, CheckCircle2, Download, Users2, Printer, BarChart3, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | "all">("all");
+  const [selectedProgram, setSelectedProgram] = useState<string | "all">("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [isBulkAttendanceOpen, setIsBulkAttendanceOpen] = useState(false);
@@ -32,9 +34,15 @@ export default function Home() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const data = localStorageService.getParticipants();
-    setParticipants(data);
+    loadData();
   }, []);
+
+  const loadData = () => {
+    const participantsData = localStorageService.getParticipants();
+    const programsData = localStorageService.getPrograms();
+    setParticipants(participantsData);
+    setPrograms(programsData);
+  };
 
   const filteredParticipants = useMemo(() => {
     return participants.filter((p) => {
@@ -43,18 +51,28 @@ export default function Home() {
         p.parentEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.phoneNumber.includes(searchQuery);
 
-      const matchesAgeGroup =
-        selectedAgeGroup === "all" || p.ageGroup === selectedAgeGroup;
+      const matchesProgram =
+        selectedProgram === "all" || p.programId === selectedProgram;
 
-      return matchesSearch && matchesAgeGroup;
+      return matchesSearch && matchesProgram;
     });
-  }, [participants, searchQuery, selectedAgeGroup]);
+  }, [participants, searchQuery, selectedProgram]);
 
   const handleAddParticipant = (data: InsertParticipant) => {
+    const program = programs.find(p => p.id === data.programId);
+    if (!program) {
+      toast({
+        title: "Error",
+        description: "Selected program not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newParticipant: Participant = {
       id: crypto.randomUUID(),
       ...data,
-      attendance: Array(10).fill(false),
+      attendance: Array(program.attendanceWeeks).fill(false),
       createdAt: new Date().toISOString(),
     };
 
@@ -63,16 +81,32 @@ export default function Home() {
     setLastSaved(new Date());
     toast({
       title: "Participant added",
-      description: `${newParticipant.fullName} has been added successfully.`,
+      description: `${newParticipant.fullName} has been added to ${program.name}.`,
     });
   };
 
   const handleEditParticipant = (data: InsertParticipant) => {
     if (!editingParticipant) return;
 
+    const program = programs.find(p => p.id === data.programId);
+    if (!program) {
+      toast({
+        title: "Error",
+        description: "Selected program not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If program changed, reset attendance
+    const attendance = data.programId !== editingParticipant.programId
+      ? Array(program.attendanceWeeks).fill(false)
+      : editingParticipant.attendance;
+
     const updated: Participant = {
       ...editingParticipant,
       ...data,
+      attendance,
     };
 
     localStorageService.updateParticipant(editingParticipant.id, updated);
@@ -116,6 +150,15 @@ export default function Home() {
   };
 
   const openAddForm = () => {
+    if (programs.length === 0) {
+      toast({
+        title: "No programs available",
+        description: "Please create a program first before adding participants.",
+        variant: "destructive",
+      });
+      setActiveTab("programs");
+      return;
+    }
     setEditingParticipant(undefined);
     setIsFormOpen(true);
   };
@@ -151,7 +194,7 @@ export default function Home() {
   };
 
   const handleExportParticipants = () => {
-    exportToCSV(participants, "participants");
+    exportToCSV(participants, programs, "participants");
     toast({
       title: "Export successful",
       description: "Participant list has been exported to CSV.",
@@ -159,7 +202,7 @@ export default function Home() {
   };
 
   const handleExportAttendance = () => {
-    exportAttendanceToCSV(participants, "attendance");
+    exportAttendanceToCSV(participants, programs, "attendance");
     toast({
       title: "Export successful",
       description: "Attendance data has been exported to CSV.",
@@ -172,6 +215,11 @@ export default function Home() {
       title: "Printing",
       description: `Opening print dialog for ${type}...`,
     });
+  };
+
+  const getProgramName = (programId: string) => {
+    const program = programs.find(p => p.id === programId);
+    return program?.name || "Unknown Program";
   };
 
   return (
@@ -218,10 +266,14 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 no-print">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="participants" className="gap-2" data-testid="tab-participants">
               <Users2 className="h-4 w-4" />
               Participants
+            </TabsTrigger>
+            <TabsTrigger value="programs" className="gap-2" data-testid="tab-programs">
+              <Calendar className="h-4 w-4" />
+              Programs
             </TabsTrigger>
             <TabsTrigger value="statistics" className="gap-2" data-testid="tab-statistics">
               <BarChart3 className="h-4 w-4" />
@@ -277,22 +329,22 @@ export default function Home() {
 
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               <Badge
-                variant={selectedAgeGroup === "all" ? "default" : "outline"}
+                variant={selectedProgram === "all" ? "default" : "outline"}
                 className="cursor-pointer hover-elevate active-elevate-2 whitespace-nowrap"
-                onClick={() => setSelectedAgeGroup("all")}
+                onClick={() => setSelectedProgram("all")}
                 data-testid="filter-all"
               >
-                All Groups
+                All Programs
               </Badge>
-              {ageGroups.map((group) => (
+              {programs.map((program) => (
                 <Badge
-                  key={group}
-                  variant={selectedAgeGroup === group ? "default" : "outline"}
+                  key={program.id}
+                  variant={selectedProgram === program.id ? "default" : "outline"}
                   className="cursor-pointer hover-elevate active-elevate-2 whitespace-nowrap"
-                  onClick={() => setSelectedAgeGroup(group)}
-                  data-testid={`filter-${group}`}
+                  onClick={() => setSelectedProgram(program.id)}
+                  data-testid={`filter-program-${program.id}`}
                 >
-                  {ageGroupLabels[group]}
+                  {program.name}
                 </Badge>
               ))}
             </div>
@@ -308,6 +360,7 @@ export default function Home() {
                     <ParticipantCard
                       key={participant.id}
                       participant={participant}
+                      programName={getProgramName(participant.programId)}
                       onEdit={openEditForm}
                       onDelete={handleDeleteParticipant}
                       onViewAttendance={openAttendance}
@@ -325,6 +378,10 @@ export default function Home() {
                 )}
               </>
             )}
+          </TabsContent>
+
+          <TabsContent value="programs" className="space-y-6">
+            <ProgramManagement programs={programs} onProgramsChange={loadData} />
           </TabsContent>
 
           <TabsContent value="statistics" className="space-y-6">
@@ -360,7 +417,7 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              <StatisticsView participants={participants} />
+              <StatisticsView participants={participants} programs={programs} />
             )}
           </TabsContent>
         </Tabs>
@@ -368,6 +425,7 @@ export default function Home() {
 
       <ParticipantForm
         participant={editingParticipant}
+        programs={programs}
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onSubmit={editingParticipant ? handleEditParticipant : handleAddParticipant}
@@ -375,6 +433,7 @@ export default function Home() {
 
       <AttendanceTracker
         participant={attendanceParticipant}
+        programName={attendanceParticipant ? getProgramName(attendanceParticipant.programId) : ""}
         open={isAttendanceOpen}
         onOpenChange={setIsAttendanceOpen}
         onSave={handleSaveAttendance}
@@ -382,13 +441,14 @@ export default function Home() {
 
       <BulkAttendanceDialog
         participants={participants}
+        programs={programs}
         open={isBulkAttendanceOpen}
         onOpenChange={setIsBulkAttendanceOpen}
         onSave={handleBulkAttendanceSave}
       />
 
-      <PrintView participants={participants} type="roster" />
-      <PrintView participants={participants} type="attendance" />
+      <PrintView participants={participants} programs={programs} type="roster" />
+      <PrintView participants={participants} programs={programs} type="attendance" />
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Participant, ageGroups, ageGroupLabels, type AgeGroup } from "@shared/schema";
+import { useState, useMemo } from "react";
+import { Participant, Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,6 +14,7 @@ import { X, Users } from "lucide-react";
 
 interface BulkAttendanceDialogProps {
   participants: Participant[];
+  programs: Program[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (updates: { participantId: string; attendance: boolean[] }[]) => void;
@@ -21,17 +22,26 @@ interface BulkAttendanceDialogProps {
 
 export function BulkAttendanceDialog({
   participants,
+  programs,
   open,
   onOpenChange,
   onSave,
 }: BulkAttendanceDialogProps) {
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | "all">("all");
+  const [selectedProgramId, setSelectedProgramId] = useState<string | "all">("all");
   const [selectedWeeks, setSelectedWeeks] = useState<number[]>([]);
 
   const filteredParticipants =
-    selectedAgeGroup === "all"
+    selectedProgramId === "all"
       ? participants
-      : participants.filter((p) => p.ageGroup === selectedAgeGroup);
+      : participants.filter((p) => p.programId === selectedProgramId);
+
+  const maxWeeks = useMemo(() => {
+    if (selectedProgramId === "all") {
+      return Math.max(...programs.map(p => p.attendanceWeeks), 10);
+    }
+    const program = programs.find(p => p.id === selectedProgramId);
+    return program?.attendanceWeeks || 10;
+  }, [selectedProgramId, programs]);
 
   const toggleWeek = (weekIndex: number) => {
     setSelectedWeeks((prev) =>
@@ -42,7 +52,7 @@ export function BulkAttendanceDialog({
   };
 
   const selectAllWeeks = () => {
-    setSelectedWeeks(Array.from({ length: 10 }, (_, i) => i));
+    setSelectedWeeks(Array.from({ length: maxWeeks }, (_, i) => i));
   };
 
   const clearAllWeeks = () => {
@@ -53,7 +63,9 @@ export function BulkAttendanceDialog({
     const updates = filteredParticipants.map((p) => {
       const newAttendance = [...p.attendance];
       selectedWeeks.forEach((weekIndex) => {
-        newAttendance[weekIndex] = true;
+        if (weekIndex < newAttendance.length) {
+          newAttendance[weekIndex] = true;
+        }
       });
       return { participantId: p.id, attendance: newAttendance };
     });
@@ -66,7 +78,9 @@ export function BulkAttendanceDialog({
     const updates = filteredParticipants.map((p) => {
       const newAttendance = [...p.attendance];
       selectedWeeks.forEach((weekIndex) => {
-        newAttendance[weekIndex] = false;
+        if (weekIndex < newAttendance.length) {
+          newAttendance[weekIndex] = false;
+        }
       });
       return { participantId: p.id, attendance: newAttendance };
     });
@@ -95,27 +109,27 @@ export function BulkAttendanceDialog({
 
         <div className="space-y-6 py-4">
           <div>
-            <h3 className="text-sm font-medium mb-3">1. Select Age Group</h3>
+            <h3 className="text-sm font-medium mb-3">1. Select Program</h3>
             <div className="flex flex-wrap gap-2">
               <Badge
-                variant={selectedAgeGroup === "all" ? "default" : "outline"}
+                variant={selectedProgramId === "all" ? "default" : "outline"}
                 className="cursor-pointer hover-elevate active-elevate-2"
-                onClick={() => setSelectedAgeGroup("all")}
+                onClick={() => setSelectedProgramId("all")}
                 data-testid="bulk-filter-all"
               >
-                All Groups ({participants.length})
+                All Programs ({participants.length})
               </Badge>
-              {ageGroups.map((group) => {
-                const count = participants.filter((p) => p.ageGroup === group).length;
+              {programs.map((program) => {
+                const count = participants.filter((p) => p.programId === program.id).length;
                 return (
                   <Badge
-                    key={group}
-                    variant={selectedAgeGroup === group ? "default" : "outline"}
+                    key={program.id}
+                    variant={selectedProgramId === program.id ? "default" : "outline"}
                     className="cursor-pointer hover-elevate active-elevate-2"
-                    onClick={() => setSelectedAgeGroup(group)}
-                    data-testid={`bulk-filter-${group}`}
+                    onClick={() => setSelectedProgramId(program.id)}
+                    data-testid={`bulk-filter-${program.id}`}
                   >
-                    {ageGroupLabels[group]} ({count})
+                    {program.name} ({count})
                   </Badge>
                 );
               })}
@@ -145,7 +159,7 @@ export function BulkAttendanceDialog({
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {Array.from({ length: 10 }, (_, i) => (
+              {Array.from({ length: maxWeeks }, (_, i) => (
                 <div
                   key={i}
                   className="flex items-center space-x-2 p-3 rounded-lg border hover-elevate"

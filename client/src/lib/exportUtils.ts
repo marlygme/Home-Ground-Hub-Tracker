@@ -1,18 +1,34 @@
-import { Participant, ageGroupLabels } from "@shared/schema";
+import { Participant, Program } from "@shared/schema";
 
-export function exportToCSV(participants: Participant[], filename: string = "participants") {
-  const headers = ["Name", "Email", "Phone", "Age Group", "Weeks Attended", "Attendance %"];
+export function exportToCSV(
+  participants: Participant[], 
+  programs: Program[], 
+  filename: string = "participants"
+) {
+  const getProgramName = (programId: string): string => {
+    const program = programs.find(p => p.id === programId);
+    return program?.name || "Unknown";
+  };
+
+  const getProgramWeeks = (programId: string): number => {
+    const program = programs.find(p => p.id === programId);
+    return program?.attendanceWeeks || 10;
+  };
+
+  const headers = ["Name", "Email", "Phone", "Age", "Program", "Weeks Attended", "Attendance %"];
   
   const rows = participants.map((p) => {
+    const programWeeks = getProgramWeeks(p.programId);
     const attendedWeeks = p.attendance.filter(Boolean).length;
-    const percentage = Math.round((attendedWeeks / 10) * 100);
+    const percentage = programWeeks > 0 ? Math.round((attendedWeeks / programWeeks) * 100) : 0;
     
     return [
       p.fullName,
       p.parentEmail,
       p.phoneNumber,
-      ageGroupLabels[p.ageGroup],
-      `${attendedWeeks}/10`,
+      p.age.toString(),
+      getProgramName(p.programId),
+      `${attendedWeeks}/${programWeeks}`,
       `${percentage}%`,
     ];
   });
@@ -25,24 +41,52 @@ export function exportToCSV(participants: Participant[], filename: string = "par
   downloadFile(csvContent, `${filename}.csv`, "text/csv");
 }
 
-export function exportAttendanceToCSV(participants: Participant[], filename: string = "attendance") {
+export function exportAttendanceToCSV(
+  participants: Participant[], 
+  programs: Program[], 
+  filename: string = "attendance"
+) {
+  const getProgramName = (programId: string): string => {
+    const program = programs.find(p => p.id === programId);
+    return program?.name || "Unknown";
+  };
+
+  const getProgramWeeks = (programId: string): number => {
+    const program = programs.find(p => p.id === programId);
+    return program?.attendanceWeeks || 10;
+  };
+
+  const maxWeeks = programs.length > 0 
+    ? Math.max(...programs.map(p => p.attendanceWeeks))
+    : 10;
+
   const headers = [
     "Name",
-    "Age Group",
-    ...Array.from({ length: 10 }, (_, i) => `Week ${i + 1}`),
+    "Age",
+    "Program",
+    ...Array.from({ length: maxWeeks }, (_, i) => `Week ${i + 1}`),
     "Total",
     "%",
   ];
 
   const rows = participants.map((p) => {
+    const programWeeks = getProgramWeeks(p.programId);
     const attendedWeeks = p.attendance.filter(Boolean).length;
-    const percentage = Math.round((attendedWeeks / 10) * 100);
+    const percentage = programWeeks > 0 ? Math.round((attendedWeeks / programWeeks) * 100) : 0;
+
+    const weekColumns = Array.from({ length: maxWeeks }, (_, i) => {
+      if (i < programWeeks) {
+        return p.attendance[i] ? "✓" : "";
+      }
+      return "-";
+    });
 
     return [
       p.fullName,
-      ageGroupLabels[p.ageGroup],
-      ...p.attendance.map((attended) => (attended ? "✓" : "")),
-      `${attendedWeeks}/10`,
+      p.age.toString(),
+      getProgramName(p.programId),
+      ...weekColumns,
+      `${attendedWeeks}/${programWeeks}`,
       `${percentage}%`,
     ];
   });

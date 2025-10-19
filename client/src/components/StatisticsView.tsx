@@ -1,50 +1,77 @@
-import { Participant, ageGroupLabels } from "@shared/schema";
+import { Participant, Program } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, Calendar, Award } from "lucide-react";
 
 interface StatisticsViewProps {
   participants: Participant[];
+  programs: Program[];
 }
 
-export function StatisticsView({ participants }: StatisticsViewProps) {
+export function StatisticsView({ participants, programs }: StatisticsViewProps) {
   const totalParticipants = participants.length;
+  
+  const getProgramMaxWeeks = (programId: string): number => {
+    const program = programs.find(p => p.id === programId);
+    return program?.attendanceWeeks || 10;
+  };
+
   const totalAttendance = participants.reduce(
     (sum, p) => sum + p.attendance.filter(Boolean).length,
     0
   );
-  const maxPossibleAttendance = totalParticipants * 10;
+  
+  const maxPossibleAttendance = participants.reduce(
+    (sum, p) => sum + getProgramMaxWeeks(p.programId),
+    0
+  );
+
   const overallAttendanceRate = maxPossibleAttendance > 0
     ? Math.round((totalAttendance / maxPossibleAttendance) * 100)
     : 0;
 
-  const weeklyStats = Array.from({ length: 10 }, (_, weekIndex) => {
-    const present = participants.filter((p) => p.attendance[weekIndex]).length;
-    const rate = totalParticipants > 0 ? Math.round((present / totalParticipants) * 100) : 0;
-    return { week: weekIndex + 1, present, rate };
+  const maxWeeks = programs.length > 0 
+    ? Math.max(...programs.map(p => p.attendanceWeeks))
+    : 10;
+
+  const weeklyStats = Array.from({ length: maxWeeks }, (_, weekIndex) => {
+    const eligibleParticipants = participants.filter(p => {
+      const programWeeks = getProgramMaxWeeks(p.programId);
+      return weekIndex < programWeeks;
+    });
+    const present = eligibleParticipants.filter((p) => p.attendance[weekIndex]).length;
+    const rate = eligibleParticipants.length > 0 
+      ? Math.round((present / eligibleParticipants.length) * 100) 
+      : 0;
+    return { week: weekIndex + 1, present, total: eligibleParticipants.length, rate };
   });
 
   const bestWeek = weeklyStats.reduce((best, week) =>
     week.rate > best.rate ? week : best
   , weeklyStats[0]);
 
-  const ageGroupStats = Object.entries(
-    participants.reduce((acc, p) => {
-      if (!acc[p.ageGroup]) {
-        acc[p.ageGroup] = { count: 0, totalAttendance: 0 };
-      }
-      acc[p.ageGroup].count++;
-      acc[p.ageGroup].totalAttendance += p.attendance.filter(Boolean).length;
-      return acc;
-    }, {} as Record<string, { count: number; totalAttendance: number }>)
-  ).map(([group, data]) => ({
-    group,
-    count: data.count,
-    avgAttendance: data.count > 0 ? Math.round((data.totalAttendance / (data.count * 10)) * 100) : 0,
-  }));
+  const programStats = programs.map((program) => {
+    const programParticipants = participants.filter(p => p.programId === program.id);
+    const totalProgramAttendance = programParticipants.reduce(
+      (sum, p) => sum + p.attendance.filter(Boolean).length,
+      0
+    );
+    const maxProgramAttendance = programParticipants.length * program.attendanceWeeks;
+    const avgAttendance = maxProgramAttendance > 0
+      ? Math.round((totalProgramAttendance / maxProgramAttendance) * 100)
+      : 0;
+    
+    return {
+      programId: program.id,
+      programName: program.name,
+      count: programParticipants.length,
+      avgAttendance,
+    };
+  }).filter(stat => stat.count > 0);
 
-  const perfectAttendance = participants.filter(
-    (p) => p.attendance.filter(Boolean).length === 10
-  );
+  const perfectAttendance = participants.filter((p) => {
+    const programWeeks = getProgramMaxWeeks(p.programId);
+    return p.attendance.filter(Boolean).length === programWeeks;
+  });
 
   return (
     <div className="space-y-6">
@@ -101,7 +128,7 @@ export function StatisticsView({ participants }: StatisticsViewProps) {
               {perfectAttendance.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              10/10 weeks completed
+              All weeks completed
             </p>
           </CardContent>
         </Card>
@@ -119,7 +146,7 @@ export function StatisticsView({ participants }: StatisticsViewProps) {
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">Week {week.week}</span>
                     <span className="text-muted-foreground">
-                      {week.present}/{totalParticipants} ({week.rate}%)
+                      {week.present}/{week.total} ({week.rate}%)
                     </span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
@@ -136,24 +163,28 @@ export function StatisticsView({ participants }: StatisticsViewProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Age Group Statistics</CardTitle>
+            <CardTitle>Program Statistics</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {ageGroupStats.map((stat) => (
-                <div key={stat.group} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{ageGroupLabels[stat.group as keyof typeof ageGroupLabels]}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {stat.count} participant{stat.count !== 1 ? "s" : ""}
-                    </p>
+              {programStats.length > 0 ? (
+                programStats.map((stat) => (
+                  <div key={stat.programId} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{stat.programName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {stat.count} participant{stat.count !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">{stat.avgAttendance}%</p>
+                      <p className="text-xs text-muted-foreground">avg attendance</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-primary">{stat.avgAttendance}%</p>
-                    <p className="text-xs text-muted-foreground">avg attendance</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No program data available</p>
+              )}
             </div>
           </CardContent>
         </Card>
