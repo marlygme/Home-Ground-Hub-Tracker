@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertParticipantSchema, type InsertParticipant, type Participant, ageGroups, ageGroupLabels } from "@shared/schema";
+import { insertParticipantSchema, type InsertParticipant, type Participant, type Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import { X } from "lucide-react";
 
 interface ParticipantFormProps {
   participant?: Participant;
+  programs: Program[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: InsertParticipant) => void;
@@ -29,6 +30,7 @@ interface ParticipantFormProps {
 
 export function ParticipantForm({
   participant,
+  programs,
   open,
   onOpenChange,
   onSubmit,
@@ -40,13 +42,15 @@ export function ParticipantForm({
           fullName: participant.fullName,
           parentEmail: participant.parentEmail,
           phoneNumber: participant.phoneNumber,
-          ageGroup: participant.ageGroup,
+          age: participant.age,
+          programId: participant.programId,
         }
       : {
           fullName: "",
           parentEmail: "",
           phoneNumber: "",
-          ageGroup: "5-7",
+          age: 8,
+          programId: programs.length > 0 ? programs[0].id : "",
         },
   });
 
@@ -135,31 +139,66 @@ export function ParticipantForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ageGroup" className="font-medium text-sm">
-              Age Group *
+            <Label htmlFor="age" className="font-medium text-sm">
+              Age *
             </Label>
-            <Select
-              value={form.watch("ageGroup")}
-              onValueChange={(value) =>
-                form.setValue("ageGroup", value as typeof ageGroups[number])
-              }
-            >
-              <SelectTrigger data-testid="select-ageGroup">
-                <SelectValue placeholder="Select age group" />
-              </SelectTrigger>
-              <SelectContent>
-                {ageGroups.map((group) => (
-                  <SelectItem key={group} value={group} data-testid={`option-ageGroup-${group}`}>
-                    {ageGroupLabels[group]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.ageGroup && (
+            <Input
+              id="age"
+              type="number"
+              min={3}
+              max={99}
+              data-testid="input-age"
+              placeholder="Enter age"
+              {...form.register("age", { valueAsNumber: true })}
+              className={form.formState.errors.age ? "border-destructive" : ""}
+            />
+            {form.formState.errors.age && (
               <p className="text-sm text-destructive">
-                {form.formState.errors.ageGroup.message}
+                {form.formState.errors.age.message}
               </p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Current age (3-99 years)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="programId" className="font-medium text-sm">
+              Program *
+            </Label>
+            <Select
+              value={form.watch("programId")}
+              onValueChange={(value) => form.setValue("programId", value)}
+            >
+              <SelectTrigger data-testid="select-programId">
+                <SelectValue placeholder="Select program" />
+              </SelectTrigger>
+              <SelectContent>
+                {programs.length === 0 ? (
+                  <SelectItem value="" disabled data-testid="option-no-programs">
+                    No programs available - create one first
+                  </SelectItem>
+                ) : (
+                  programs.map((program) => (
+                    <SelectItem 
+                      key={program.id} 
+                      value={program.id}
+                      data-testid={`option-program-${program.id}`}
+                    >
+                      {program.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {form.formState.errors.programId && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.programId.message}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Assign participant to a program or event
+            </p>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -171,7 +210,11 @@ export function ParticipantForm({
             >
               Cancel
             </Button>
-            <Button type="submit" data-testid="button-submit">
+            <Button 
+              type="submit" 
+              data-testid="button-submit"
+              disabled={programs.length === 0}
+            >
               {participant ? "Save Changes" : "Add Participant"}
             </Button>
           </DialogFooter>
