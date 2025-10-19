@@ -1,4 +1,5 @@
 import { Participant, ageGroupColors, ageGroupLabels } from "@shared/schema";
+import { formatAustralianPhone } from "@/lib/phoneUtils";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ export function ParticipantCard({
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Phone className="h-4 w-4 shrink-0" />
-          <span data-testid="text-phone">{participant.phoneNumber}</span>
+          <span data-testid="text-phone">{formatAustralianPhone(participant.phoneNumber)}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />

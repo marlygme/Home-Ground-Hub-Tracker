@@ -124,3 +124,32 @@ All participant data is stored in browser localStorage under the key `home-groun
 - Offline-first functionality (localStorage)
 - Quick access to attendance tracking
 - Easy participant management
+- Australian phone number format (+61 area code)
+- Cloudflare Pages deployment ready
+
+## Deployment to Cloudflare Pages
+
+This application is configured for Cloudflare Pages deployment:
+
+1. **Build Settings:**
+   - Build command: `npm run build`
+   - Build output directory: `dist/public`
+   - Framework preset: None (or leave blank)
+
+2. **SPA Routing:**
+   - The `client/public/_redirects` file ensures proper client-side routing
+   - Contains: `/* /index.html 200`
+   - Automatically included in build output
+
+3. **Deploy:**
+   - Connect your Git repository to Cloudflare Pages
+   - Use the build settings above
+   - All routes will work correctly with client-side routing
+
+## Phone Number Format
+
+- Validates Australian phone numbers (mobile and landline)
+- Accepts formats: `+61 412 345 678`, `0412 345 678`, `02 9876 5432`
+- Automatically formats numbers for display
+- Mobile: 04XX XXX XXX or +61 4XX XXX XXX
+- Landline: 0X XXXX XXXX (where X is 2, 3, 7, or 8)

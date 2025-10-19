@@ -120,7 +120,7 @@ export function ParticipantForm({
               id="phoneNumber"
               type="tel"
               data-testid="input-phoneNumber"
-              placeholder="(555) 123-4567"
+              placeholder="+61 412 345 678 or 0412 345 678"
               {...form.register("phoneNumber")}
               className={form.formState.errors.phoneNumber ? "border-destructive" : ""}
             />
@@ -129,6 +129,9 @@ export function ParticipantForm({
                 {form.formState.errors.phoneNumber.message}
               </p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Australian format (mobile or landline)
+            </p>
           </div>
 
           <div className="space-y-2">

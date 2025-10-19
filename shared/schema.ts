@@ -19,6 +19,17 @@ export const insertParticipantSchema = participantSchema.omit({
   attendance: true 
 }).extend({
   attendance: z.array(z.boolean()).length(10).optional(),
+  phoneNumber: z.string()
+    .min(1, "Phone number is required")
+    .refine(
+      (val) => {
+        const cleaned = val.replace(/[\s\(\)\-]/g, '');
+        const mobileRegex = /^(?:\+?61|0)4\d{8}$/;
+        const landlineRegex = /^(?:\+?61|0)[2378]\d{8}$/;
+        return mobileRegex.test(cleaned) || landlineRegex.test(cleaned);
+      },
+      { message: "Please enter a valid Australian phone number (e.g., +61 412 345 678 or 0412 345 678)" }
+    ),
 });
 
 export type Participant = z.infer<typeof participantSchema>;

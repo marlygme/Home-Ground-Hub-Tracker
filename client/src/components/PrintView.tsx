@@ -1,4 +1,5 @@
 import { Participant, ageGroupLabels } from "@shared/schema";
+import { formatAustralianPhone } from "@/lib/phoneUtils";
 
 interface PrintViewProps {
   participants: Participant[];
@@ -41,7 +42,7 @@ export function PrintView({ participants, type }: PrintViewProps) {
                 <td className="py-2 px-3 border-b border-gray-200">{p.fullName}</td>
                 <td className="py-2 px-3 border-b border-gray-200">{ageGroupLabels[p.ageGroup]}</td>
                 <td className="py-2 px-3 border-b border-gray-200">{p.parentEmail}</td>
-                <td className="py-2 px-3 border-b border-gray-200">{p.phoneNumber}</td>
+                <td className="py-2 px-3 border-b border-gray-200">{formatAustralianPhone(p.phoneNumber)}</td>
               </tr>
             ))}
           </tbody>
