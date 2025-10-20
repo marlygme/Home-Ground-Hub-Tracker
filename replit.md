@@ -1,7 +1,7 @@
 # Home Ground Hub Tracker
 
 ## Overview
-A mobile-friendly React + Vite web application for managing participants in soccer programs. Built with localStorage for data persistence, allowing coaches and administrators to create custom soccer programs, assign participants, and track weekly attendance offline.
+A mobile-friendly React + Vite web application for managing participants in soccer programs. Built with PostgreSQL database for permanent, multi-user data storage, allowing coaches and administrators to create custom soccer programs, assign participants, and track weekly attendance with real-time data sharing across all users.
 
 ## Purpose
 - Create and manage multiple soccer programs with custom names and attendance week counts
@@ -14,11 +14,12 @@ A mobile-friendly React + Vite web application for managing participants in socc
 
 ## Technology Stack
 - **Frontend**: React 18, TypeScript, Vite
+- **Backend**: Express.js + Node.js
+- **Database**: PostgreSQL (Neon) with Drizzle ORM
 - **UI Components**: Shadcn UI (Radix UI primitives)
 - **Styling**: Tailwind CSS with custom design tokens
 - **Forms**: React Hook Form + Zod validation
-- **Data Persistence**: Browser localStorage
-- **State Management**: React useState/useEffect
+- **Data Fetching**: TanStack Query (React Query)
 - **Routing**: Wouter
 
 ## Project Architecture
@@ -105,35 +106,54 @@ client/src/
 ├── components/
 │   ├── ui/ (Shadcn components)
 │   ├── ThemeProvider.tsx
-│   ├── ProgramManagement.tsx (NEW - program CRUD)
-│   ├── ParticipantForm.tsx (updated - program selection, age number)
-│   ├── AttendanceTracker.tsx (updated - dynamic weeks)
-│   ├── ParticipantCard.tsx (updated - shows age and program)
-│   ├── BulkAttendanceDialog.tsx (updated - program filtering)
-│   ├── StatisticsView.tsx (updated - program analytics)
-│   ├── PrintView.tsx (updated - dynamic weeks, program columns)
+│   ├── ProgramManagement.tsx (program CRUD with API)
+│   ├── ParticipantForm.tsx (participant forms with API)
+│   ├── AttendanceTracker.tsx (dynamic weeks)
+│   ├── ParticipantCard.tsx (shows age and program)
+│   ├── BulkAttendanceDialog.tsx (program filtering)
+│   ├── StatisticsView.tsx (program analytics)
+│   ├── PrintView.tsx (dynamic weeks, program columns)
 │   └── EmptyState.tsx
 ├── pages/
 │   ├── Home.tsx (main dashboard - 3 tabs)
 │   └── not-found.tsx
 ├── lib/
-│   ├── localStorage.ts (data service - programs + participants)
-│   ├── exportUtils.ts (updated - program-aware exports)
-│   └── queryClient.ts
+│   ├── exportUtils.ts (CSV export utilities)
+│   └── queryClient.ts (TanStack Query setup + API helpers)
 └── App.tsx
 
+server/
+├── db/
+│   └── index.ts (Drizzle database connection)
+├── routes.ts (REST API endpoints)
+├── storage.ts (database operations)
+└── index.ts (Express server)
+
 shared/
-└── schema.ts (Zod schemas & types - Program + Participant)
+└── schema.ts (Drizzle + Zod schemas - Program + Participant)
 ```
 
-### Data Persistence
-- **Programs**: Stored in localStorage under `home-ground-hub-programs`
-- **Participants**: Stored in localStorage under `home-ground-hub-participants`
-- Data persists across browser sessions
-- Automatic save indicators
-- Program deletion checks for assigned participants
+### Data Persistence & Multi-User Support
+- **Database**: PostgreSQL (Neon) with HTTP connection
+- **Tables**: `programs` and `participants`
+- **ORM**: Drizzle for type-safe database operations
+- **API**: REST endpoints (GET, POST, PATCH, DELETE)
+- **Multi-user**: All data shared in real-time across all users
+- **Persistence**: Data permanently stored in database
+- **Data fetching**: TanStack Query with automatic caching and invalidation
+- Program deletion checks for assigned participants before allowing deletion
 
 ### Recent Changes
+- **Phase 4 - PostgreSQL Multi-User Database** (October 20, 2025)
+  - Migrated from localStorage to PostgreSQL database for permanent storage
+  - Implemented multi-user data sharing across all users
+  - Created REST API with Express.js backend
+  - Added Drizzle ORM for type-safe database operations
+  - Integrated TanStack Query for data fetching and caching
+  - All users now see real-time updates when data changes
+  - Data persists permanently even after browser closes
+  - Prepared for deployment to Cloudflare Pages with backend support
+
 - **Phase 3 - Program System** (October 19, 2025)
   - Replaced age group system with individual age (number)
   - Implemented full program management (create, edit, delete)
@@ -166,66 +186,54 @@ shared/
 ## User Preferences
 - Mobile-friendly interface required
 - Clean, professional design
-- Offline-first functionality (localStorage)
+- Multi-user data sharing with permanent database storage
 - Quick access to attendance tracking
 - Easy program and participant management
 - Australian phone number format (+61 area code)
 - Individual age tracking (not date of birth)
 - Custom program names (e.g., "Monday Soccer", "Youth Cup 02.12")
 - Flexible attendance week counts per program
-- Cloudflare Pages deployment ready
+- Real-time updates visible to all users
 
-## Deployment to Cloudflare Pages
+## Deployment
 
-### Step-by-Step Deployment Instructions
+### Architecture
+This application now uses a full-stack architecture:
+- **Frontend**: React + Vite (static files)
+- **Backend**: Express.js REST API
+- **Database**: PostgreSQL (Neon)
 
-**IMPORTANT:** This is a static frontend-only app (no Node.js server needed). All data is stored in browser localStorage.
+### Deployment Options
 
-1. **Push Your Code to GitHub/GitLab**
-   - Commit all your changes
-   - Push to your repository
+#### Option 1: Replit Deployments (Recommended)
+The easiest way to deploy this app is using Replit's built-in deployment:
 
-2. **Create New Project in Cloudflare Pages**
-   - Go to https://dash.cloudflare.com/
-   - Navigate to "Workers & Pages" → "Create" → "Pages" → "Connect to Git"
-   - Select your repository
+1. Click the "Deploy" button in Replit
+2. Configure your deployment settings
+3. Your app will be deployed with both frontend and backend
+4. Database connection is automatically configured
+5. Your app will be live at: `your-project-name.replit.app`
 
-3. **Configure Build Settings** (VERY IMPORTANT - Enter Exactly as Shown):
-   ```
-   Framework preset: None
-   Build command: npm run build
-   Build output directory: dist/public
-   ```
+#### Option 2: Manual Deployment (Advanced)
+For custom deployments, you'll need to deploy:
+1. **Database**: PostgreSQL instance (Neon, Supabase, etc.)
+2. **Backend**: Express server (Render, Railway, Fly.io)
+3. **Frontend**: Static files (Cloudflare Pages, Vercel, Netlify)
 
-4. **Environment Variables** (Optional)
-   - None required - app uses localStorage only
+**Required Environment Variables:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `SESSION_SECRET` - Random secret for sessions
+- `NODE_ENV` - Set to `production`
 
-5. **Deploy**
-   - Click "Save and Deploy"
-   - Wait for build to complete (usually 1-2 minutes)
-   - Your app will be live at: `your-project-name.pages.dev`
+**Build Commands:**
+- Frontend: `npm run build` (outputs to `dist/public`)
+- Backend: `tsx server/index.ts` or `npm run dev`
 
-### Troubleshooting
-
-**Problem: Blank page on Cloudflare Pages preview**
-- Solution: Make sure "Build output directory" is exactly `dist/public` (not `dist`)
-- The build creates two folders: `dist/index.js` (backend - ignore this) and `dist/public/` (frontend - use this)
-
-**Problem: 404 errors when refreshing the page**
-- This shouldn't happen - the `_redirects` file handles this
-- Verify the file exists: Check `dist/public/_redirects` contains `/* /index.html 200`
-- Contact Cloudflare support if issue persists
-
-**Problem: Build fails**
-- Check that Node.js version is set to 18 or higher in Cloudflare settings
-- Verify all dependencies are in `package.json`
-
-### SPA Routing Configuration
-
-- The `client/public/_redirects` file ensures proper client-side routing
-- Contains: `/* /index.html 200`
-- Automatically included in build output at `dist/public/_redirects`
-- This file tells Cloudflare Pages to serve `index.html` for all routes, allowing React Router (wouter) to handle navigation
+### Important Notes
+- The app requires both frontend and backend to be running
+- Database must be PostgreSQL-compatible
+- All users share the same database
+- Data persists permanently in the database
 
 ## Phone Number Format
 
