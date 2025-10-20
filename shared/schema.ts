@@ -14,8 +14,8 @@ export const programs = pgTable("programs", {
 export const participants = pgTable("participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   fullName: varchar("full_name").notNull(),
-  parentEmail: varchar("parent_email").notNull(),
-  phoneNumber: varchar("phone_number").notNull(),
+  parentEmail: varchar("parent_email"),
+  phoneNumber: varchar("phone_number"),
   age: integer("age").notNull(),
   programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: "cascade" }),
   attendance: boolean("attendance").array().notNull().default(sql`ARRAY[]::boolean[]`),
@@ -42,10 +42,12 @@ export const insertParticipantSchema = baseParticipantInsertSchema.omit({
   attendance: true,
 }).extend({
   attendance: z.array(z.boolean()).optional(),
+  parentEmail: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   phoneNumber: z.string()
-    .min(1, "Phone number is required")
+    .optional()
     .refine(
       (val) => {
+        if (!val || val === "") return true;
         const cleaned = val.replace(/[\s\(\)\-]/g, '');
         const mobileRegex = /^(?:\+?61|0)4\d{8}$/;
         const landlineRegex = /^(?:\+?61|0)[2378]\d{8}$/;

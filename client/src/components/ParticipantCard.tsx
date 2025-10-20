@@ -41,14 +41,18 @@ export function ParticipantCard({
       </CardHeader>
 
       <CardContent className="space-y-2 pb-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Mail className="h-4 w-4 shrink-0" />
-          <span className="truncate" data-testid="text-email">{participant.parentEmail}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Phone className="h-4 w-4 shrink-0" />
-          <span data-testid="text-phone">{formatAustralianPhone(participant.phoneNumber)}</span>
-        </div>
+        {participant.parentEmail && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Mail className="h-4 w-4 shrink-0" />
+            <span className="truncate" data-testid="text-email">{participant.parentEmail}</span>
+          </div>
+        )}
+        {participant.phoneNumber && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Phone className="h-4 w-4 shrink-0" />
+            <span data-testid="text-phone">{formatAustralianPhone(participant.phoneNumber)}</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="font-medium" data-testid="text-attendance-weeks">

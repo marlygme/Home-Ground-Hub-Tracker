@@ -24,8 +24,8 @@ export function exportToCSV(
     
     return [
       p.fullName,
-      p.parentEmail,
-      p.phoneNumber,
+      p.parentEmail || "",
+      p.phoneNumber || "",
       p.age.toString(),
       getProgramName(p.programId),
       `${attendedWeeks}/${programWeeks}`,

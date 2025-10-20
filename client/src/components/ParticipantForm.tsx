@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { insertParticipantSchema, type InsertParticipant, type Participant, type Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,26 +38,39 @@ export function ParticipantForm({
 }: ParticipantFormProps) {
   const form = useForm<InsertParticipant>({
     resolver: zodResolver(insertParticipantSchema),
-    defaultValues: participant
-      ? {
-          fullName: participant.fullName,
-          parentEmail: participant.parentEmail,
-          phoneNumber: participant.phoneNumber,
-          age: participant.age,
-          programId: participant.programId,
-        }
-      : {
-          fullName: "",
-          parentEmail: "",
-          phoneNumber: "",
-          age: 8,
-          programId: programs.length > 0 ? programs[0].id : "",
-        },
+    defaultValues: {
+      fullName: "",
+      parentEmail: "",
+      phoneNumber: "",
+      age: 8,
+      programId: programs.length > 0 ? programs[0].id : "",
+    },
   });
+
+  // Reset form when participant changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset(participant
+        ? {
+            fullName: participant.fullName,
+            parentEmail: participant.parentEmail || "",
+            phoneNumber: participant.phoneNumber || "",
+            age: participant.age,
+            programId: participant.programId,
+          }
+        : {
+            fullName: "",
+            parentEmail: "",
+            phoneNumber: "",
+            age: 8,
+            programId: programs.length > 0 ? programs[0].id : "",
+          }
+      );
+    }
+  }, [open, participant, programs, form]);
 
   const handleSubmit = (data: InsertParticipant) => {
     onSubmit(data);
-    form.reset();
     onOpenChange(false);
   };
 
@@ -99,13 +113,13 @@ export function ParticipantForm({
 
           <div className="space-y-2">
             <Label htmlFor="parentEmail" className="font-medium text-sm">
-              Parent/Guardian Email *
+              Parent/Guardian Email
             </Label>
             <Input
               id="parentEmail"
               type="email"
               data-testid="input-parentEmail"
-              placeholder="parent@example.com"
+              placeholder="parent@example.com (optional)"
               {...form.register("parentEmail")}
               className={form.formState.errors.parentEmail ? "border-destructive" : ""}
             />
@@ -118,13 +132,13 @@ export function ParticipantForm({
 
           <div className="space-y-2">
             <Label htmlFor="phoneNumber" className="font-medium text-sm">
-              Phone Number *
+              Phone Number
             </Label>
             <Input
               id="phoneNumber"
               type="tel"
               data-testid="input-phoneNumber"
-              placeholder="+61 412 345 678 or 0412 345 678"
+              placeholder="+61 412 345 678 or 0412 345 678 (optional)"
               {...form.register("phoneNumber")}
               className={form.formState.errors.phoneNumber ? "border-destructive" : ""}
             />

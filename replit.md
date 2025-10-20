@@ -35,9 +35,9 @@ Program {
 
 Participant {
   id: string (UUID)
-  fullName: string
-  parentEmail: string (validated email)
-  phoneNumber: string (Australian format, +61)
+  fullName: string (required)
+  parentEmail: string | null (optional, validated email if provided)
+  phoneNumber: string | null (optional, Australian format +61 if provided)
   age: number (individual age, not age group)
   programId: string (references Program.id)
   attendance: boolean[] (length matches Program.attendanceWeeks)
@@ -57,6 +57,7 @@ Participant {
    - Add new participants with validated forms
    - Assign participants to specific programs
    - Individual age (number) instead of age groups
+   - **Optional email and phone fields** (can be added later)
    - Edit existing participant information
    - Delete participants with confirmation
    - Real-time search across name, email, phone
@@ -152,7 +153,10 @@ shared/
   - Integrated TanStack Query for data fetching and caching
   - All users now see real-time updates when data changes
   - Data persists permanently even after browser closes
-  - Prepared for deployment to Cloudflare Pages with backend support
+  - **Made email and phone optional fields** - participants can be added without contact info
+  - Updated form validation to allow empty email/phone with proper format validation when provided
+  - Participant cards now hide email/phone icons when not provided
+  - Prepared for deployment to Replit with backend support
 
 - **Phase 3 - Program System** (October 19, 2025)
   - Replaced age group system with individual age (number)

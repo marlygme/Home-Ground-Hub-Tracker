@@ -113,8 +113,8 @@ export default function Home() {
     return participants.filter((p) => {
       const matchesSearch =
         p.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.parentEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.phoneNumber.includes(searchQuery);
+        (p.parentEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (p.phoneNumber?.includes(searchQuery) ?? false);
 
       const matchesProgram =
         selectedProgram === "all" || p.programId === selectedProgram;
