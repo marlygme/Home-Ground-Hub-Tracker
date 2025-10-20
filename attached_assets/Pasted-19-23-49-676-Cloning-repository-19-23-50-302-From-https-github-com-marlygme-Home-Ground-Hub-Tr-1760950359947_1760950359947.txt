@@ -1,0 +1,72 @@
+19:23:49.676	Cloning repository...
+19:23:50.302	From https://github.com/marlygme/Home-Ground-Hub-Tracker
+19:23:50.302	 * branch            a8f73db88fc982186b521a251a32a097ca1726de -> FETCH_HEAD
+19:23:50.302	
+19:23:50.333	HEAD is now at a8f73db Integrate with Neon database and remove Replit dependencies
+19:23:50.333	
+19:23:50.413	
+19:23:50.413	Using v2 root directory strategy
+19:23:50.436	Success: Finished cloning repository files
+19:23:52.161	Checking for configuration in a Wrangler configuration file (BETA)
+19:23:52.162	
+19:23:52.163	Found wrangler.toml file. Reading build configuration...
+19:23:53.270	A wrangler.toml file was found but it does not appear to be valid. Did you mean to use wrangler.toml to configure Pages? If so, then make sure the file is valid and contains the `pages_build_output_dir` property. Skipping file and continuing.
+19:23:53.340	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+19:23:53.341	Installing project dependencies: npm clean-install --progress=false
+19:23:57.710	npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+19:23:57.835	npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+19:30:55.349	
+19:30:55.349	added 525 packages in 7m
+19:30:55.350	
+19:30:55.350	74 packages are looking for funding
+19:30:55.350	  run `npm fund` for details
+19:30:55.375	Executing user command: npm run build
+19:30:55.765	
+19:30:55.766	> rest-express@1.0.0 build
+19:30:55.766	> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+19:30:55.766	
+19:30:56.031	vite v5.4.20 building for production...
+19:30:56.081	transforming...
+19:30:56.388	Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+19:30:56.388	  npx update-browserslist-db@latest
+19:30:56.388	  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+19:30:57.072	
+19:30:57.072	A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+19:30:59.624	✓ 1839 modules transformed.
+19:30:59.882	rendering chunks...
+19:30:59.892	computing gzip size...
+19:30:59.908	../dist/public/index.html                   0.90 kB │ gzip:   0.49 kB
+19:30:59.908	../dist/public/assets/index-Bby-ikhB.css   71.51 kB │ gzip:  11.66 kB
+19:30:59.908	../dist/public/assets/index-DMbR5oOz.js   509.49 kB │ gzip: 153.79 kB
+19:30:59.908	✓ built in 3.85s
+19:30:59.909	
+19:30:59.909	(!) Some chunks are larger than 500 kB after minification. Consider:
+19:30:59.909	- Using dynamic import() to code-split the application
+19:30:59.909	- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+19:30:59.909	- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+19:30:59.959	
+19:30:59.960	  dist/index.js  12.3kb
+19:30:59.960	
+19:30:59.960	⚡ Done in 8ms
+19:30:59.979	Finished
+19:31:00.895	Checking for configuration in a Wrangler configuration file (BETA)
+19:31:00.895	
+19:31:00.896	Found wrangler.toml file. Reading build configuration...
+19:31:02.004	A wrangler.toml file was found but it does not appear to be valid. Did you mean to use wrangler.toml to configure Pages? If so, then make sure the file is valid and contains the `pages_build_output_dir` property. Skipping file and continuing.
+19:31:02.005	Found Functions directory at /functions. Uploading.
+19:31:02.011	 ⛅️ wrangler 3.101.0
+19:31:02.011	-------------------
+19:31:03.023	✨ Compiled Worker successfully
+19:31:04.118	Validating asset output directory
+19:31:07.297	Deploying your site to Cloudflare's global network...
+19:31:10.660	Parsed 0 valid redirect rules.
+19:31:10.661	Found invalid redirect lines:
+19:31:10.661	  - #1: /* /index.html 200
+19:31:10.661	    Infinite loop detected in this rule and has been ignored. This will cause a redirect to strip `.html` or `/index` and end up triggering this rule again. Please fix or remove this rule to silence this warning.
+19:31:11.820	Uploading... (3/3)
+19:31:11.820	✨ Success! Uploaded 0 files (3 already uploaded) (0.29 sec)
+19:31:11.821	
+19:31:12.159	✨ Upload complete!
+19:31:15.852	Success: Assets published!
+19:31:17.036	Error: Failed to publish your Function. Got error: Uncaught ReferenceError: process is not defined
+  at functionsWorker-0.30995082310303723.js:17457:1

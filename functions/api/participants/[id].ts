@@ -1,9 +1,14 @@
-import { storage } from '../../../server/storage';
+import { createStorage } from '../../../server/db/storage-factory';
 import { insertParticipantSchema } from '../../../shared/schema';
 
-export async function onRequestGet({ params }: { params: { id: string } }) {
+interface Env {
+  DATABASE_URL: string;
+}
+
+export async function onRequestGet(context: { params: { id: string }; env: Env }) {
   try {
-    const participant = await storage.getParticipantById(params.id);
+    const storage = createStorage(context.env.DATABASE_URL);
+    const participant = await storage.getParticipantById(context.params.id);
     if (!participant) {
       return Response.json({ error: "Participant not found" }, { status: 404 });
     }
@@ -14,11 +19,12 @@ export async function onRequestGet({ params }: { params: { id: string } }) {
   }
 }
 
-export async function onRequestPatch({ params, request }: { params: { id: string }; request: Request }) {
+export async function onRequestPatch(context: { request: Request; params: { id: string }; env: Env }) {
   try {
-    const body = await request.json();
+    const storage = createStorage(context.env.DATABASE_URL);
+    const body = await context.request.json();
     const data = insertParticipantSchema.partial().parse(body);
-    const participant = await storage.updateParticipant(params.id, data);
+    const participant = await storage.updateParticipant(context.params.id, data);
     return Response.json(participant);
   } catch (error) {
     console.error("Error updating participant:", error);
@@ -26,9 +32,10 @@ export async function onRequestPatch({ params, request }: { params: { id: string
   }
 }
 
-export async function onRequestDelete({ params }: { params: { id: string } }) {
+export async function onRequestDelete(context: { params: { id: string }; env: Env }) {
   try {
-    await storage.deleteParticipant(params.id);
+    const storage = createStorage(context.env.DATABASE_URL);
+    await storage.deleteParticipant(context.params.id);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Error deleting participant:", error);

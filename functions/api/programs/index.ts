@@ -1,8 +1,13 @@
-import { storage } from '../../../server/storage';
+import { createStorage } from '../../../server/db/storage-factory';
 import { insertProgramSchema } from '../../../shared/schema';
 
-export async function onRequestGet() {
+interface Env {
+  DATABASE_URL: string;
+}
+
+export async function onRequestGet(context: { env: Env }) {
   try {
+    const storage = createStorage(context.env.DATABASE_URL);
     const programs = await storage.getPrograms();
     return Response.json(programs);
   } catch (error) {
@@ -11,9 +16,10 @@ export async function onRequestGet() {
   }
 }
 
-export async function onRequestPost({ request }: { request: Request }) {
+export async function onRequestPost(context: { request: Request; env: Env }) {
   try {
-    const body = await request.json();
+    const storage = createStorage(context.env.DATABASE_URL);
+    const body = await context.request.json();
     const data = insertProgramSchema.parse(body);
     const program = await storage.createProgram(data);
     return Response.json(program, { status: 201 });

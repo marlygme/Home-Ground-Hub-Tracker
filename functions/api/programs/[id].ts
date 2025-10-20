@@ -1,9 +1,14 @@
-import { storage } from '../../../server/storage';
+import { createStorage } from '../../../server/db/storage-factory';
 import { insertProgramSchema } from '../../../shared/schema';
 
-export async function onRequestGet({ params }: { params: { id: string } }) {
+interface Env {
+  DATABASE_URL: string;
+}
+
+export async function onRequestGet(context: { params: { id: string }; env: Env }) {
   try {
-    const program = await storage.getProgramById(params.id);
+    const storage = createStorage(context.env.DATABASE_URL);
+    const program = await storage.getProgramById(context.params.id);
     if (!program) {
       return Response.json({ error: "Program not found" }, { status: 404 });
     }
@@ -14,11 +19,12 @@ export async function onRequestGet({ params }: { params: { id: string } }) {
   }
 }
 
-export async function onRequestPatch({ params, request }: { params: { id: string }; request: Request }) {
+export async function onRequestPatch(context: { request: Request; params: { id: string }; env: Env }) {
   try {
-    const body = await request.json();
+    const storage = createStorage(context.env.DATABASE_URL);
+    const body = await context.request.json();
     const data = insertProgramSchema.partial().parse(body);
-    const program = await storage.updateProgram(params.id, data);
+    const program = await storage.updateProgram(context.params.id, data);
     return Response.json(program);
   } catch (error) {
     console.error("Error updating program:", error);
@@ -26,9 +32,10 @@ export async function onRequestPatch({ params, request }: { params: { id: string
   }
 }
 
-export async function onRequestDelete({ params }: { params: { id: string } }) {
+export async function onRequestDelete(context: { params: { id: string }; env: Env }) {
   try {
-    await storage.deleteProgram(params.id);
+    const storage = createStorage(context.env.DATABASE_URL);
+    await storage.deleteProgram(context.params.id);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Error deleting program:", error);
