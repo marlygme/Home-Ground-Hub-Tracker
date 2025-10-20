@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Participant, InsertParticipant, Program } from "@shared/schema";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequestJson } from "@/lib/queryClient";
 import { exportToCSV, exportAttendanceToCSV } from "@/lib/exportUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,10 +44,7 @@ export default function Home() {
   // Create participant mutation
   const createParticipantMutation = useMutation({
     mutationFn: async (data: InsertParticipant) => {
-      return apiRequest("/api/participants", {
-        method: "POST",
-        body: data,
-      });
+      return apiRequestJson<Participant>("POST", "/api/participants", data);
     },
     onSuccess: (newParticipant: Participant) => {
       queryClient.invalidateQueries({ queryKey: ["/api/participants"] });
@@ -69,10 +66,7 @@ export default function Home() {
   // Update participant mutation
   const updateParticipantMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertParticipant> }) => {
-      return apiRequest(`/api/participants/${id}`, {
-        method: "PATCH",
-        body: data,
-      });
+      return apiRequestJson<Participant>("PATCH", `/api/participants/${id}`, data);
     },
     onSuccess: (updatedParticipant: Participant) => {
       queryClient.invalidateQueries({ queryKey: ["/api/participants"] });
@@ -93,9 +87,7 @@ export default function Home() {
   // Delete participant mutation
   const deleteParticipantMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/participants/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequestJson("DELETE", `/api/participants/${id}`);
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["/api/participants"] });

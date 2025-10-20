@@ -34,7 +34,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProgramSchema, type Program, type InsertProgram } from "@shared/schema";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequestJson } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProgramManagementProps {
@@ -59,10 +59,7 @@ export function ProgramManagement({ programs, onProgramsChange }: ProgramManagem
   // Create program mutation
   const createProgramMutation = useMutation({
     mutationFn: async (data: InsertProgram) => {
-      return apiRequest("/api/programs", {
-        method: "POST",
-        body: data,
-      });
+      return apiRequestJson<Program>("POST", "/api/programs", data);
     },
     onSuccess: (newProgram: Program) => {
       queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
@@ -84,10 +81,7 @@ export function ProgramManagement({ programs, onProgramsChange }: ProgramManagem
   // Update program mutation
   const updateProgramMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertProgram> }) => {
-      return apiRequest(`/api/programs/${id}`, {
-        method: "PATCH",
-        body: data,
-      });
+      return apiRequestJson<Program>("PATCH", `/api/programs/${id}`, data);
     },
     onSuccess: (updatedProgram: Program) => {
       queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
@@ -109,9 +103,7 @@ export function ProgramManagement({ programs, onProgramsChange }: ProgramManagem
   // Delete program mutation
   const deleteProgramMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/programs/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequestJson("DELETE", `/api/programs/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/programs"] });

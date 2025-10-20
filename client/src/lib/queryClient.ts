@@ -23,6 +23,18 @@ export async function apiRequest(
   return res;
 }
 
+export async function apiRequestJson<T = unknown>(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<T> {
+  const res = await apiRequest(method, url, data);
+  if (method === "DELETE") {
+    return undefined as T;
+  }
+  return await res.json();
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
