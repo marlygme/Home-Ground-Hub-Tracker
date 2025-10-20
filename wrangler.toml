@@ -1,0 +1,17 @@
+name = "home-ground-hub-tracker"
+main = "server/worker.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Environment variables (set via wrangler secret)
+# Run: npx wrangler secret put DATABASE_URL
+# Run: npx wrangler secret put SESSION_SECRET
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
