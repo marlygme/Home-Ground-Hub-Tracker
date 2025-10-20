@@ -1,5 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Replace YOUR-SUBDOMAIN with your actual Workers subdomain
+const baseUrl = 'https://home-ground-hub-tracker.YOUR-SUBDOMAIN.workers.dev';
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
