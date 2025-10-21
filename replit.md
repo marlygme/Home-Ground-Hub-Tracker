@@ -165,6 +165,10 @@ shared/
     - Updated `updateAttendance` storage method to persist attendance in junction table
     - Fixed `handleSaveAttendance` to call API instead of just closing dialog
     - Added `updateAttendance` to IStorage interface
+    - **Optimized database queries** to prevent "Too many subrequests" error on Cloudflare:
+      - Changed from individual queries (70+ for 23 participants) to efficient JOINs (just 1 query)
+      - `getParticipants()` now uses a single LEFT JOIN query instead of nested loops
+      - `getParticipantById()` now uses a single LEFT JOIN query instead of multiple queries
 
 - **Phase 4 - PostgreSQL Multi-User Database** (October 20, 2025)
   - Migrated from localStorage to PostgreSQL database for permanent storage

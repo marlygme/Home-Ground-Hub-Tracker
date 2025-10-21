@@ -48,86 +48,68 @@ export class DbStorage implements IStorage {
 
   // Participant methods
   async getParticipants(): Promise<ParticipantWithPrograms[]> {
-    const allParticipants = await this.db.select().from(participants);
-    
-    // For each participant, get their programs with attendance
-    const participantsWithPrograms = await Promise.all(
-      allParticipants.map(async (participant) => {
-        const programLinks = await this.db
-          .select()
-          .from(participantPrograms)
-          .where(eq(participantPrograms.participantId, participant.id));
-        
-        const programsData = await Promise.all(
-          programLinks.map(async (link) => {
-            const program = await this.db
-              .select()
-              .from(programs)
-              .where(eq(programs.id, link.programId));
-            
-            // Guard against deleted programs
-            if (!program[0]) {
-              console.warn(`Program ${link.programId} not found for participant ${participant.id}`);
-              return null;
-            }
-            
-            return {
-              ...program[0],
-              attendance: link.attendance,
-            };
-          })
-        );
-
-        // Filter out any null entries from deleted programs
-        const validPrograms = programsData.filter((p): p is NonNullable<typeof p> => p !== null);
-
-        return {
-          ...participant,
-          programs: validPrograms,
-        };
+    // Single query with JOIN to get all data at once
+    const results = await this.db
+      .select({
+        participant: participants,
+        program: programs,
+        attendance: participantPrograms.attendance,
       })
-    );
+      .from(participants)
+      .leftJoin(participantPrograms, eq(participants.id, participantPrograms.participantId))
+      .leftJoin(programs, eq(participantPrograms.programId, programs.id));
 
-    return participantsWithPrograms;
+    // Group by participant
+    const participantMap = new Map<string, ParticipantWithPrograms>();
+
+    for (const row of results) {
+      const participantId = row.participant.id;
+      
+      if (!participantMap.has(participantId)) {
+        participantMap.set(participantId, {
+          ...row.participant,
+          programs: [],
+        });
+      }
+
+      // Add program if it exists (won't exist if no programs assigned)
+      if (row.program && row.attendance) {
+        participantMap.get(participantId)!.programs.push({
+          ...row.program,
+          attendance: row.attendance,
+        });
+      }
+    }
+
+    return Array.from(participantMap.values());
   }
 
   async getParticipantById(id: string): Promise<ParticipantWithPrograms | undefined> {
-    const result = await this.db.select().from(participants).where(eq(participants.id, id));
-    const participant = result[0];
-    
-    if (!participant) return undefined;
-
-    const programLinks = await this.db
-      .select()
-      .from(participantPrograms)
-      .where(eq(participantPrograms.participantId, participant.id));
-    
-    const programsData = await Promise.all(
-      programLinks.map(async (link) => {
-        const program = await this.db
-          .select()
-          .from(programs)
-          .where(eq(programs.id, link.programId));
-        
-        // Guard against deleted programs
-        if (!program[0]) {
-          console.warn(`Program ${link.programId} not found for participant ${id}`);
-          return null;
-        }
-        
-        return {
-          ...program[0],
-          attendance: link.attendance,
-        };
+    // Single query with JOIN to get all data at once
+    const results = await this.db
+      .select({
+        participant: participants,
+        program: programs,
+        attendance: participantPrograms.attendance,
       })
-    );
+      .from(participants)
+      .leftJoin(participantPrograms, eq(participants.id, participantPrograms.participantId))
+      .leftJoin(programs, eq(participantPrograms.programId, programs.id))
+      .where(eq(participants.id, id));
 
-    // Filter out any null entries from deleted programs
-    const validPrograms = programsData.filter((p): p is NonNullable<typeof p> => p !== null);
+    if (results.length === 0) return undefined;
+
+    const participant = results[0].participant;
+    const programsData = results
+      .filter(row => row.program && row.attendance)
+      .map(row => ({
+        ...row.program!,
+        attendance: row.attendance!,
+      }));
 
     return {
       ...participant,
-      programs: validPrograms,
+      programs: programsData,
     };
   }
 
