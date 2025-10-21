@@ -63,6 +63,13 @@ export class DbStorage implements IStorage {
               .select()
               .from(programs)
               .where(eq(programs.id, link.programId));
+            
+            // Guard against deleted programs
+            if (!program[0]) {
+              console.warn(`Program ${link.programId} not found for participant ${participant.id}`);
+              return null;
+            }
+            
             return {
               ...program[0],
               attendance: link.attendance,
@@ -70,9 +77,12 @@ export class DbStorage implements IStorage {
           })
         );
 
+        // Filter out any null entries from deleted programs
+        const validPrograms = programsData.filter((p): p is NonNullable<typeof p> => p !== null);
+
         return {
           ...participant,
-          programs: programsData,
+          programs: validPrograms,
         };
       })
     );
@@ -97,6 +107,13 @@ export class DbStorage implements IStorage {
           .select()
           .from(programs)
           .where(eq(programs.id, link.programId));
+        
+        // Guard against deleted programs
+        if (!program[0]) {
+          console.warn(`Program ${link.programId} not found for participant ${id}`);
+          return null;
+        }
+        
         return {
           ...program[0],
           attendance: link.attendance,
@@ -104,9 +121,12 @@ export class DbStorage implements IStorage {
       })
     );
 
+    // Filter out any null entries from deleted programs
+    const validPrograms = programsData.filter((p): p is NonNullable<typeof p> => p !== null);
+
     return {
       ...participant,
-      programs: programsData,
+      programs: validPrograms,
     };
   }
 

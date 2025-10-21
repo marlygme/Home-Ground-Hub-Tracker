@@ -7,12 +7,27 @@ interface Env {
 
 export async function onRequestGet(context: { env: Env }) {
   try {
+    console.log("Fetching participants...");
+    
+    if (!context.env.DATABASE_URL) {
+      console.error("DATABASE_URL is not set");
+      return Response.json({ error: "Database configuration missing" }, { status: 500 });
+    }
+    
     const storage = createStorage(context.env.DATABASE_URL);
     const participants = await storage.getParticipants();
+    
+    console.log(`Successfully fetched ${participants.length} participants`);
     return Response.json(participants);
   } catch (error) {
     console.error("Error fetching participants:", error);
-    return Response.json({ error: "Failed to fetch participants" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : "";
+    console.error("Error details:", { message: errorMessage, stack: errorStack });
+    return Response.json({ 
+      error: "Failed to fetch participants",
+      details: errorMessage 
+    }, { status: 500 });
   }
 }
 

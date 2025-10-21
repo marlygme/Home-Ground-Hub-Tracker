@@ -32,13 +32,15 @@ export default function Home() {
   const { toast } = useToast();
 
   // Fetch programs
-  const { data: programs = [], isLoading: programsLoading } = useQuery<Program[]>({
+  const { data: programs = [], isLoading: programsLoading, error: programsError } = useQuery<Program[]>({
     queryKey: ["/api/programs"],
+    retry: 2,
   });
 
   // Fetch participants
-  const { data: participants = [], isLoading: participantsLoading } = useQuery<ParticipantWithPrograms[]>({
+  const { data: participants = [], isLoading: participantsLoading, error: participantsError } = useQuery<ParticipantWithPrograms[]>({
     queryKey: ["/api/participants"],
+    retry: 2,
   });
 
   // Create participant mutation
@@ -140,8 +142,8 @@ export default function Home() {
     deleteParticipantMutation.mutate(id);
   };
 
-  const handleSaveAttendance = (participantId: string, programId: string, attendance: boolean[]) => {
-    // TODO: Update attendance for specific program
+  const handleSaveAttendance = (participantId: string, attendance: boolean[]) => {
+    // TODO: Update attendance tracking for multi-program support
     // For now, just close the dialog
     setIsAttendanceOpen(false);
   };
@@ -171,12 +173,13 @@ export default function Home() {
     setIsAttendanceOpen(true);
   };
 
-  const handleBulkAttendanceSave = (updates: { participantId: string; programId: string; attendance: boolean[] }[]) => {
+  const handleBulkAttendanceSave = (updates: { participantId: string; attendance: boolean[] }[]) => {
     // TODO: Implement bulk attendance update for multi-program
     toast({
       title: "Bulk attendance updated",
       description: `Updated attendance for ${updates.length} participant(s).`,
     });
+    setIsBulkAttendanceOpen(false);
   };
 
   const handleExportParticipants = () => {
@@ -249,7 +252,20 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 no-print">
-        {isLoading ? (
+        {programsError || participantsError ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="text-destructive text-6xl mb-4">⚠️</div>
+            <h3 className="text-xl font-semibold mb-2">Unable to Load Data</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {programsError ? `Programs: ${programsError instanceof Error ? programsError.message : String(programsError)}` : ''}
+              {programsError && participantsError && <br />}
+              {participantsError ? `Participants: ${participantsError instanceof Error ? participantsError.message : String(participantsError)}` : ''}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Reload Page
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
