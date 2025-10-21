@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Participant, Program } from "@shared/schema";
+import { ParticipantWithPrograms, Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Users } from "lucide-react";
 
 interface BulkAttendanceDialogProps {
-  participants: Participant[];
+  participants: ParticipantWithPrograms[];
   programs: Program[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,7 +33,7 @@ export function BulkAttendanceDialog({
   const filteredParticipants =
     selectedProgramId === "all"
       ? participants
-      : participants.filter((p) => p.programId === selectedProgramId);
+      : participants.filter((p) => p.programs.some(prog => prog.id === selectedProgramId));
 
   const maxWeeks = useMemo(() => {
     if (selectedProgramId === "all") {
@@ -61,7 +61,9 @@ export function BulkAttendanceDialog({
 
   const handleMarkPresent = () => {
     const updates = filteredParticipants.map((p) => {
-      const newAttendance = [...p.attendance];
+      // Use first program's attendance (TODO: support multi-program attendance)
+      const firstProgramAttendance = p.programs[0]?.attendance || [];
+      const newAttendance = [...firstProgramAttendance];
       selectedWeeks.forEach((weekIndex) => {
         if (weekIndex < newAttendance.length) {
           newAttendance[weekIndex] = true;
@@ -76,7 +78,9 @@ export function BulkAttendanceDialog({
 
   const handleMarkAbsent = () => {
     const updates = filteredParticipants.map((p) => {
-      const newAttendance = [...p.attendance];
+      // Use first program's attendance (TODO: support multi-program attendance)
+      const firstProgramAttendance = p.programs[0]?.attendance || [];
+      const newAttendance = [...firstProgramAttendance];
       selectedWeeks.forEach((weekIndex) => {
         if (weekIndex < newAttendance.length) {
           newAttendance[weekIndex] = false;
@@ -120,7 +124,7 @@ export function BulkAttendanceDialog({
                 All Programs ({participants.length})
               </Badge>
               {programs.map((program) => {
-                const count = participants.filter((p) => p.programId === program.id).length;
+                const count = participants.filter((p) => p.programs.some(prog => prog.id === program.id)).length;
                 return (
                   <Badge
                     key={program.id}

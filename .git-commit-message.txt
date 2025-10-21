@@ -1,0 +1,10 @@
+Fix Cloudflare Pages deployment with multi-program support
+
+- Fixed module import in server/db/cloudflare.ts (use relative path instead of alias)
+- Updated all components to use ParticipantWithPrograms type
+- Fixed TypeScript errors in AttendanceTracker, BulkAttendanceDialog, StatisticsView, PrintView
+- Updated exportUtils to handle multi-program participants
+- Added null-safety guards for deleted programs in storage layer
+- Removed old localStorage.ts file
+
+This fixes the blank screen issue on the deployed site.

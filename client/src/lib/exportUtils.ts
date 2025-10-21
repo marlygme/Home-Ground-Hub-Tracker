@@ -1,34 +1,30 @@
-import { Participant, Program } from "@shared/schema";
+import { ParticipantWithPrograms, Program } from "@shared/schema";
 
 export function exportToCSV(
-  participants: Participant[], 
+  participants: ParticipantWithPrograms[], 
   programs: Program[], 
   filename: string = "participants"
 ) {
-  const getProgramName = (programId: string): string => {
-    const program = programs.find(p => p.id === programId);
-    return program?.name || "Unknown";
-  };
-
-  const getProgramWeeks = (programId: string): number => {
-    const program = programs.find(p => p.id === programId);
-    return program?.attendanceWeeks || 10;
-  };
-
-  const headers = ["Name", "Email", "Phone", "Age", "Program", "Weeks Attended", "Attendance %"];
+  const headers = ["Name", "Email", "Phone", "Age", "Programs", "Weeks Attended", "Attendance %"];
   
   const rows = participants.map((p) => {
-    const programWeeks = getProgramWeeks(p.programId);
-    const attendedWeeks = p.attendance.filter(Boolean).length;
-    const percentage = programWeeks > 0 ? Math.round((attendedWeeks / programWeeks) * 100) : 0;
+    // Calculate total attendance across all programs
+    const totalAttended = p.programs.reduce((sum, prog) => 
+      sum + prog.attendance.filter(Boolean).length, 0
+    );
+    const totalWeeks = p.programs.reduce((sum, prog) => 
+      sum + prog.attendance.length, 0
+    );
+    const percentage = totalWeeks > 0 ? Math.round((totalAttended / totalWeeks) * 100) : 0;
+    const programNames = p.programs.map(prog => prog.name).join("; ");
     
     return [
       p.fullName,
       p.parentEmail || "",
       p.phoneNumber || "",
       p.age.toString(),
-      getProgramName(p.programId),
-      `${attendedWeeks}/${programWeeks}`,
+      programNames || "None",
+      `${totalAttended}/${totalWeeks}`,
       `${percentage}%`,
     ];
   });
@@ -42,20 +38,10 @@ export function exportToCSV(
 }
 
 export function exportAttendanceToCSV(
-  participants: Participant[], 
+  participants: ParticipantWithPrograms[], 
   programs: Program[], 
   filename: string = "attendance"
 ) {
-  const getProgramName = (programId: string): string => {
-    const program = programs.find(p => p.id === programId);
-    return program?.name || "Unknown";
-  };
-
-  const getProgramWeeks = (programId: string): number => {
-    const program = programs.find(p => p.id === programId);
-    return program?.attendanceWeeks || 10;
-  };
-
   const maxWeeks = programs.length > 0 
     ? Math.max(...programs.map(p => p.attendanceWeeks))
     : 10;
@@ -63,30 +49,32 @@ export function exportAttendanceToCSV(
   const headers = [
     "Name",
     "Age",
-    "Program",
-    ...Array.from({ length: maxWeeks }, (_, i) => `Week ${i + 1}`),
+    "Programs",
+    ...Array.from({ length: maxWeeks }, (_, i) => `W${i + 1}`),
     "Total",
     "%",
   ];
 
   const rows = participants.map((p) => {
-    const programWeeks = getProgramWeeks(p.programId);
-    const attendedWeeks = p.attendance.filter(Boolean).length;
-    const percentage = programWeeks > 0 ? Math.round((attendedWeeks / programWeeks) * 100) : 0;
-
-    const weekColumns = Array.from({ length: maxWeeks }, (_, i) => {
-      if (i < programWeeks) {
-        return p.attendance[i] ? "✓" : "";
-      }
-      return "-";
-    });
+    // Use first program's attendance for export (TODO: improve for multi-program)
+    const firstProgram = p.programs[0];
+    const attendance = firstProgram?.attendance || [];
+    const programNames = p.programs.map(prog => prog.name).join("; ");
+    
+    const weekColumns = Array.from({ length: maxWeeks }, (_, i) => 
+      i < attendance.length ? (attendance[i] ? "✓" : "") : ""
+    );
+    
+    const attended = attendance.filter(Boolean).length;
+    const total = attendance.length;
+    const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
 
     return [
       p.fullName,
       p.age.toString(),
-      getProgramName(p.programId),
+      programNames || "None",
       ...weekColumns,
-      `${attendedWeeks}/${programWeeks}`,
+      `${attended}/${total}`,
       `${percentage}%`,
     ];
   });
@@ -99,14 +87,12 @@ export function exportAttendanceToCSV(
   downloadFile(csvContent, `${filename}.csv`, "text/csv");
 }
 
-function downloadFile(content: string, filename: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
+function downloadFile(content: string, filename: string, type: string) {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
-  document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }

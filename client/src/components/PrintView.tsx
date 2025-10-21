@@ -1,23 +1,13 @@
-import { Participant, Program } from "@shared/schema";
+import { ParticipantWithPrograms, Program } from "@shared/schema";
 import { formatAustralianPhone } from "@/lib/phoneUtils";
 
 interface PrintViewProps {
-  participants: Participant[];
+  participants: ParticipantWithPrograms[];
   programs: Program[];
   type: "roster" | "attendance";
 }
 
 export function PrintView({ participants, programs, type }: PrintViewProps) {
-  const getProgramName = (programId: string): string => {
-    const program = programs.find(p => p.id === programId);
-    return program?.name || "Unknown Program";
-  };
-
-  const getProgramWeeks = (programId: string): number => {
-    const program = programs.find(p => p.id === programId);
-    return program?.attendanceWeeks || 10;
-  };
-
   if (type === "roster") {
     return (
       <div className="print-only p-8">
@@ -43,21 +33,26 @@ export function PrintView({ participants, programs, type }: PrintViewProps) {
             <tr className="border-b-2 border-gray-800">
               <th className="text-left py-2 px-3">Name</th>
               <th className="text-left py-2 px-3">Age</th>
-              <th className="text-left py-2 px-3">Program</th>
+              <th className="text-left py-2 px-3">Programs</th>
               <th className="text-left py-2 px-3">Email</th>
               <th className="text-left py-2 px-3">Phone</th>
             </tr>
           </thead>
           <tbody>
-            {participants.map((p, index) => (
-              <tr key={p.id} className={index % 2 === 0 ? "bg-gray-50" : ""}>
-                <td className="py-2 px-3 border-b border-gray-200">{p.fullName}</td>
-                <td className="py-2 px-3 border-b border-gray-200">{p.age}</td>
-                <td className="py-2 px-3 border-b border-gray-200">{getProgramName(p.programId)}</td>
-                <td className="py-2 px-3 border-b border-gray-200">{p.parentEmail}</td>
-                <td className="py-2 px-3 border-b border-gray-200">{formatAustralianPhone(p.phoneNumber)}</td>
-              </tr>
-            ))}
+            {participants.map((p, index) => {
+              const programNames = p.programs.map(prog => prog.name).join(", ");
+              return (
+                <tr key={p.id} className={index % 2 === 0 ? "bg-gray-50" : ""}>
+                  <td className="py-2 px-3 border-b border-gray-200">{p.fullName}</td>
+                  <td className="py-2 px-3 border-b border-gray-200">{p.age}</td>
+                  <td className="py-2 px-3 border-b border-gray-200">{programNames || "None"}</td>
+                  <td className="py-2 px-3 border-b border-gray-200">{p.parentEmail || ""}</td>
+                  <td className="py-2 px-3 border-b border-gray-200">
+                    {p.phoneNumber ? formatAustralianPhone(p.phoneNumber) : ""}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -92,39 +87,40 @@ export function PrintView({ participants, programs, type }: PrintViewProps) {
           <tr className="border-b-2 border-gray-800">
             <th className="text-left py-2 px-2">Name</th>
             <th className="text-left py-2 px-2">Age</th>
-            <th className="text-left py-2 px-2">Program</th>
+            <th className="text-left py-2 px-2">Programs</th>
             {Array.from({ length: maxWeeks }, (_, i) => (
-              <th key={i} className="text-center py-2 px-1 w-8">W{i + 1}</th>
+              <th key={i} className="text-center py-2 px-1 w-8">
+                W{i + 1}
+              </th>
             ))}
-            <th className="text-center py-2 px-2">Total</th>
-            <th className="text-center py-2 px-2">%</th>
+            <th className="text-left py-2 px-2">Total</th>
+            <th className="text-left py-2 px-2">%</th>
           </tr>
         </thead>
         <tbody>
           {participants.map((p, index) => {
-            const programWeeks = getProgramWeeks(p.programId);
-            const attended = p.attendance.filter(Boolean).length;
-            const percentage = programWeeks > 0 
-              ? Math.round((attended / programWeeks) * 100)
-              : 0;
+            // Use first program's attendance (TODO: improve for multi-program printing)
+            const firstProgram = p.programs[0];
+            const attendance = firstProgram?.attendance || [];
+            const programNames = p.programs.map(prog => prog.name).join(", ");
+            const attended = attendance.filter(Boolean).length;
+            const total = attendance.length;
+            const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
+            
             return (
               <tr key={p.id} className={index % 2 === 0 ? "bg-gray-50" : ""}>
                 <td className="py-2 px-2 border-b border-gray-200">{p.fullName}</td>
                 <td className="py-2 px-2 border-b border-gray-200">{p.age}</td>
-                <td className="py-2 px-2 border-b border-gray-200 text-xs">{getProgramName(p.programId)}</td>
-                {Array.from({ length: maxWeeks }, (_, i) => {
-                  const isApplicable = i < programWeeks;
-                  const isPresent = isApplicable && p.attendance[i];
-                  return (
-                    <td key={i} className="text-center py-2 px-1 border-b border-gray-200">
-                      {isApplicable ? (isPresent ? "✓" : "") : "-"}
-                    </td>
-                  );
-                })}
-                <td className="text-center py-2 px-2 border-b border-gray-200 font-medium">
-                  {attended}/{programWeeks}
+                <td className="py-2 px-2 border-b border-gray-200 text-xs">{programNames || "None"}</td>
+                {Array.from({ length: maxWeeks }, (_, i) => (
+                  <td key={i} className="text-center py-2 px-1 border-b border-gray-200">
+                    {i < attendance.length && attendance[i] ? "✓" : ""}
+                  </td>
+                ))}
+                <td className="py-2 px-2 border-b border-gray-200">
+                  {attended}/{total}
                 </td>
-                <td className="text-center py-2 px-2 border-b border-gray-200 font-medium">
+                <td className="py-2 px-2 border-b border-gray-200">
                   {percentage}%
                 </td>
               </tr>

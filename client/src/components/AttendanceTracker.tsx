@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Participant } from "@shared/schema";
+import { ParticipantWithPrograms } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -12,7 +12,7 @@ import {
 import { X } from "lucide-react";
 
 interface AttendanceTrackerProps {
-  participant: Participant | null;
+  participant: ParticipantWithPrograms | null;
   programName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -26,16 +26,18 @@ export function AttendanceTracker({
   onOpenChange,
   onSave,
 }: AttendanceTrackerProps) {
-  const totalWeeks = participant?.attendance.length || 10;
+  // Use first program's attendance for now (TODO: support multi-program)
+  const firstProgram = participant?.programs[0];
+  const totalWeeks = firstProgram?.attendance.length || 10;
   const [attendance, setAttendance] = useState<boolean[]>(
-    participant?.attendance || Array(totalWeeks).fill(false)
+    firstProgram?.attendance || Array(totalWeeks).fill(false)
   );
 
   useEffect(() => {
-    if (participant?.attendance) {
-      setAttendance(participant.attendance);
+    if (firstProgram?.attendance) {
+      setAttendance(firstProgram.attendance);
     }
-  }, [participant]);
+  }, [participant, firstProgram?.attendance]);
 
   const handleCheckboxChange = (weekIndex: number) => {
     const newAttendance = [...attendance];

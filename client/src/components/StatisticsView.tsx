@@ -1,29 +1,27 @@
-import { Participant, Program } from "@shared/schema";
+import { ParticipantWithPrograms, Program } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, Calendar, Award } from "lucide-react";
 
 interface StatisticsViewProps {
-  participants: Participant[];
+  participants: ParticipantWithPrograms[];
   programs: Program[];
 }
 
 export function StatisticsView({ participants, programs }: StatisticsViewProps) {
   const totalParticipants = participants.length;
   
-  const getProgramMaxWeeks = (programId: string): number => {
-    const program = programs.find(p => p.id === programId);
-    return program?.attendanceWeeks || 10;
-  };
-
-  const totalAttendance = participants.reduce(
-    (sum, p) => sum + p.attendance.filter(Boolean).length,
-    0
-  );
+  // Calculate total attendance across all programs
+  const totalAttendance = participants.reduce((sum, p) => {
+    return sum + p.programs.reduce((pSum, prog) => 
+      pSum + prog.attendance.filter(Boolean).length, 0
+    );
+  }, 0);
   
-  const maxPossibleAttendance = participants.reduce(
-    (sum, p) => sum + getProgramMaxWeeks(p.programId),
-    0
-  );
+  const maxPossibleAttendance = participants.reduce((sum, p) => {
+    return sum + p.programs.reduce((pSum, prog) => 
+      pSum + prog.attendance.length, 0
+    );
+  }, 0);
 
   const overallAttendanceRate = maxPossibleAttendance > 0
     ? Math.round((totalAttendance / maxPossibleAttendance) * 100)
@@ -34,28 +32,41 @@ export function StatisticsView({ participants, programs }: StatisticsViewProps) 
     : 10;
 
   const weeklyStats = Array.from({ length: maxWeeks }, (_, weekIndex) => {
-    const eligibleParticipants = participants.filter(p => {
-      const programWeeks = getProgramMaxWeeks(p.programId);
-      return weekIndex < programWeeks;
+    let totalEligible = 0;
+    let totalPresent = 0;
+    
+    participants.forEach(p => {
+      p.programs.forEach(prog => {
+        if (weekIndex < prog.attendance.length) {
+          totalEligible++;
+          if (prog.attendance[weekIndex]) {
+            totalPresent++;
+          }
+        }
+      });
     });
-    const present = eligibleParticipants.filter((p) => p.attendance[weekIndex]).length;
-    const rate = eligibleParticipants.length > 0 
-      ? Math.round((present / eligibleParticipants.length) * 100) 
-      : 0;
-    return { week: weekIndex + 1, present, total: eligibleParticipants.length, rate };
+    
+    const rate = totalEligible > 0 ? Math.round((totalPresent / totalEligible) * 100) : 0;
+    return { week: weekIndex + 1, present: totalPresent, total: totalEligible, rate };
   });
 
   const bestWeek = weeklyStats.reduce((best, week) =>
     week.rate > best.rate ? week : best
-  , weeklyStats[0]);
+  , weeklyStats[0] || { week: 1, present: 0, total: 0, rate: 0 });
 
   const programStats = programs.map((program) => {
-    const programParticipants = participants.filter(p => p.programId === program.id);
-    const totalProgramAttendance = programParticipants.reduce(
-      (sum, p) => sum + p.attendance.filter(Boolean).length,
-      0
-    );
-    const maxProgramAttendance = programParticipants.length * program.attendanceWeeks;
+    let totalProgramAttendance = 0;
+    let totalEnrollments = 0;
+    
+    participants.forEach(p => {
+      const programData = p.programs.find(prog => prog.id === program.id);
+      if (programData) {
+        totalEnrollments++;
+        totalProgramAttendance += programData.attendance.filter(Boolean).length;
+      }
+    });
+    
+    const maxProgramAttendance = totalEnrollments * program.attendanceWeeks;
     const avgAttendance = maxProgramAttendance > 0
       ? Math.round((totalProgramAttendance / maxProgramAttendance) * 100)
       : 0;
@@ -63,14 +74,16 @@ export function StatisticsView({ participants, programs }: StatisticsViewProps) 
     return {
       programId: program.id,
       programName: program.name,
-      count: programParticipants.length,
+      count: totalEnrollments,
       avgAttendance,
     };
   }).filter(stat => stat.count > 0);
 
   const perfectAttendance = participants.filter((p) => {
-    const programWeeks = getProgramMaxWeeks(p.programId);
-    return p.attendance.filter(Boolean).length === programWeeks;
+    return p.programs.some(prog => {
+      return prog.attendance.filter(Boolean).length === prog.attendance.length &&
+             prog.attendance.length > 0;
+    });
   });
 
   return (
@@ -110,10 +123,10 @@ export function StatisticsView({ participants, programs }: StatisticsViewProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-best-week">
-              Week {bestWeek?.week || "-"}
+              Week {bestWeek.week}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {bestWeek?.rate || 0}% attendance
+              {bestWeek.rate}% attendance
             </p>
           </CardContent>
         </Card>
@@ -128,82 +141,86 @@ export function StatisticsView({ participants, programs }: StatisticsViewProps) 
               {perfectAttendance.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              All weeks completed
+              participants
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Weekly Attendance Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {weeklyStats.map((week) => (
-                <div key={week.week} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Week {week.week}</span>
-                    <span className="text-muted-foreground">
-                      {week.present}/{week.total} ({week.rate}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-primary rounded-full h-2 transition-all"
-                      style={{ width: `${week.rate}%` }}
-                    />
+      <Card>
+        <CardHeader>
+          <CardTitle>Program Performance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {programStats.map((stat) => (
+            <div key={stat.programId} className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">{stat.programName}</span>
+                <div className="flex items-center gap-4 text-muted-foreground">
+                  <span>{stat.count} participants</span>
+                  <span className="font-semibold text-foreground">{stat.avgAttendance}%</span>
+                </div>
+              </div>
+              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${stat.avgAttendance}%` }}
+                  data-testid={`program-bar-${stat.programId}`}
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Weekly Attendance Breakdown</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {weeklyStats.map((stat) => (
+              <div key={stat.week} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Week {stat.week}</span>
+                  <div className="flex items-center gap-4 text-muted-foreground">
+                    <span>{stat.present} / {stat.total}</span>
+                    <span className="font-semibold text-foreground">{stat.rate}%</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Program Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {programStats.length > 0 ? (
-                programStats.map((stat) => (
-                  <div key={stat.programId} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{stat.programName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {stat.count} participant{stat.count !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-primary">{stat.avgAttendance}%</p>
-                      <p className="text-xs text-muted-foreground">avg attendance</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No program data available</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${stat.rate}%` }}
+                    data-testid={`week-bar-${stat.week}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {perfectAttendance.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Perfect Attendance Recognition</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-yellow-500" />
+              Perfect Attendance Recognition
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {perfectAttendance.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20"
+                  className="p-3 bg-secondary rounded-lg"
+                  data-testid={`perfect-${p.id}`}
                 >
-                  <Award className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{p.fullName}</span>
+                  <p className="font-medium">{p.fullName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {p.programs.map(prog => prog.name).join(", ")}
+                  </p>
                 </div>
               ))}
             </div>
