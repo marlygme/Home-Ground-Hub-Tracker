@@ -9,6 +9,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { X } from "lucide-react";
 
 interface AttendanceTrackerProps {
@@ -26,18 +33,29 @@ export function AttendanceTracker({
   onOpenChange,
   onSave,
 }: AttendanceTrackerProps) {
-  // Use first program's attendance for now (TODO: support multi-program)
   const firstProgram = participant?.programs[0];
-  const totalWeeks = firstProgram?.attendance.length || 10;
+  const [selectedProgramId, setSelectedProgramId] = useState<string>(firstProgram?.id || "");
+  
+  // Find the currently selected program
+  const selectedProgram = participant?.programs.find(p => p.id === selectedProgramId);
+  const totalWeeks = selectedProgram?.attendance.length || 10;
   const [attendance, setAttendance] = useState<boolean[]>(
-    firstProgram?.attendance || Array(totalWeeks).fill(false)
+    selectedProgram?.attendance || Array(totalWeeks).fill(false)
   );
 
+  // Update selected program when participant changes or dialog opens
   useEffect(() => {
-    if (firstProgram?.attendance) {
-      setAttendance(firstProgram.attendance);
+    if (participant?.programs.length) {
+      setSelectedProgramId(participant.programs[0].id);
     }
-  }, [participant, firstProgram?.attendance]);
+  }, [participant, open]);
+
+  // Update attendance when selected program changes
+  useEffect(() => {
+    if (selectedProgram?.attendance) {
+      setAttendance(selectedProgram.attendance);
+    }
+  }, [selectedProgram]);
 
   const handleCheckboxChange = (weekIndex: number) => {
     const newAttendance = [...attendance];
@@ -46,16 +64,22 @@ export function AttendanceTracker({
   };
 
   const handleSave = () => {
-    if (participant && firstProgram) {
-      onSave(participant.id, firstProgram.id, attendance);
+    if (participant && selectedProgram) {
+      onSave(participant.id, selectedProgram.id, attendance);
       onOpenChange(false);
     }
+  };
+
+  const handleProgramChange = (programId: string) => {
+    setSelectedProgramId(programId);
   };
 
   const attendedWeeks = attendance.filter(Boolean).length;
   const completionPercentage = totalWeeks > 0 ? Math.round((attendedWeeks / totalWeeks) * 100) : 0;
 
   if (!participant) return null;
+
+  const hasMultiplePrograms = (participant?.programs.length || 0) > 1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,7 +88,9 @@ export function AttendanceTracker({
           <DialogTitle className="text-xl font-semibold">
             Attendance Tracker - {participant.fullName}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">{programName}</p>
+          {!hasMultiplePrograms && (
+            <p className="text-sm text-muted-foreground mt-1">{programName}</p>
+          )}
           <Button
             size="icon"
             variant="ghost"
@@ -77,6 +103,27 @@ export function AttendanceTracker({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {hasMultiplePrograms && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Program</label>
+              <Select value={selectedProgramId} onValueChange={handleProgramChange}>
+                <SelectTrigger data-testid="select-program-trigger">
+                  <SelectValue placeholder="Select a program" />
+                </SelectTrigger>
+                <SelectContent>
+                  {participant?.programs.map((program) => (
+                    <SelectItem 
+                      key={program.id} 
+                      value={program.id}
+                      data-testid={`select-program-${program.id}`}
+                    >
+                      {program.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div>
               <p className="text-sm text-muted-foreground">Attendance Summary</p>

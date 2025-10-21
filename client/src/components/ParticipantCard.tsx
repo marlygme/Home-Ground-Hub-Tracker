@@ -18,14 +18,7 @@ export function ParticipantCard({
   onDelete,
   onViewAttendance,
 }: ParticipantCardProps) {
-  // Calculate total attendance across all programs
-  const totalAttended = participant.programs.reduce((sum, program) => {
-    return sum + program.attendance.filter(Boolean).length;
-  }, 0);
-  const totalWeeks = participant.programs.reduce((sum, program) => {
-    return sum + program.attendance.length;
-  }, 0);
-  const completionPercentage = totalWeeks > 0 ? Math.round((totalAttended / totalWeeks) * 100) : 0;
+  const hasMultiplePrograms = participant.programs.length > 1;
 
   return (
     <Card className="hover-elevate" data-testid={`card-participant-${participant.id}`}>
@@ -65,15 +58,39 @@ export function ParticipantCard({
             <span data-testid="text-phone">{formatAustralianPhone(participant.phoneNumber)}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span className="font-medium" data-testid="text-attendance-weeks">
-            {totalAttended}/{totalWeeks} weeks attended
-          </span>
-          <span className="text-muted-foreground">
-            ({completionPercentage}%)
-          </span>
-        </div>
+        {hasMultiplePrograms ? (
+          <div className="space-y-1">
+            {participant.programs.map((program) => {
+              const attended = program.attendance.filter(Boolean).length;
+              const total = program.attendance.length;
+              const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
+              return (
+                <div key={program.id} className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="font-medium text-xs" data-testid={`text-attendance-${program.id}`}>
+                    {program.name.substring(0, 20)}{program.name.length > 20 ? '...' : ''}:
+                  </span>
+                  <span className="font-medium" data-testid={`text-attendance-weeks-${program.id}`}>
+                    {attended}/{total} weeks
+                  </span>
+                  <span className="text-muted-foreground">
+                    ({percentage}%)
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium" data-testid="text-attendance-weeks">
+              {participant.programs[0]?.attendance.filter(Boolean).length || 0}/{participant.programs[0]?.attendance.length || 0} weeks attended
+            </span>
+            <span className="text-muted-foreground">
+              ({participant.programs[0]?.attendance.length > 0 ? Math.round((participant.programs[0]?.attendance.filter(Boolean).length / participant.programs[0]?.attendance.length) * 100) : 0}%)
+            </span>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="gap-2 pt-3 border-t flex-wrap">

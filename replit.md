@@ -154,6 +154,11 @@ shared/
   - Fixed Cloudflare Pages deployment issue (changed `@shared/schema` to relative import in `server/db/cloudflare.ts`)
   - Added error handling and logging to Cloudflare Functions
   - Added null-safety guards for deleted programs in storage layer
+  - **Multi-program attendance UX improvements:**
+    - Added program selector dropdown in AttendanceTracker for participants with multiple programs
+    - Participant cards now show per-program attendance breakdown instead of confusing combined total
+    - Each program's attendance is tracked and displayed independently
+    - When marking attendance, users select which program they're tracking for
   - **Fixed critical bugs:**
     - Created Cloudflare Function for attendance endpoint: `functions/api/participants/[id]/attendance.ts`
     - Programs tab now displays accurate participant counts per program
