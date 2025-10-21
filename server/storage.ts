@@ -1,5 +1,5 @@
 import { programs, participants, participantPrograms, Program, InsertProgram, Participant, ParticipantWithPrograms, InsertParticipant } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 
 export interface IStorage {
@@ -187,6 +187,18 @@ export class DbStorage implements IStorage {
     }
 
     return await this.getParticipantById(id) as ParticipantWithPrograms;
+  }
+
+  async updateAttendance(participantId: string, programId: string, attendance: boolean[]): Promise<void> {
+    await this.db
+      .update(participantPrograms)
+      .set({ attendance })
+      .where(
+        and(
+          eq(participantPrograms.participantId, participantId),
+          eq(participantPrograms.programId, programId)
+        )
+      );
   }
 
   async deleteParticipant(id: string): Promise<void> {

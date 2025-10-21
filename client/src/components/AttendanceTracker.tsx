@@ -16,7 +16,7 @@ interface AttendanceTrackerProps {
   programName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (participantId: string, attendance: boolean[]) => void;
+  onSave: (participantId: string, programId: string, attendance: boolean[]) => void;
 }
 
 export function AttendanceTracker({
@@ -46,8 +46,8 @@ export function AttendanceTracker({
   };
 
   const handleSave = () => {
-    if (participant) {
-      onSave(participant.id, attendance);
+    if (participant && firstProgram) {
+      onSave(participant.id, firstProgram.id, attendance);
       onOpenChange(false);
     }
   };

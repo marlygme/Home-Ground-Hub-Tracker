@@ -145,7 +145,7 @@ shared/
 - Program deletion checks for assigned participants before allowing deletion
 
 ### Recent Changes
-- **Phase 5 - Multi-Program Support** (October 21, 2025)
+- **Phase 5 - Multi-Program Support & Bug Fixes** (October 21, 2025)
   - Implemented many-to-many relationship between participants and programs
   - Participants can now be enrolled in multiple programs simultaneously
   - Updated database schema with `participant_programs` junction table
@@ -154,7 +154,11 @@ shared/
   - Fixed Cloudflare Pages deployment issue (changed `@shared/schema` to relative import in `server/db/cloudflare.ts`)
   - Added error handling and logging to Cloudflare Functions
   - Added null-safety guards for deleted programs in storage layer
-  - **Note**: Attendance tracking components need updating for multi-program model (future task)
+  - **Fixed critical bugs:**
+    - Attendance now saves correctly via new `/api/participants/:id/attendance` endpoint
+    - Programs tab now displays accurate participant counts per program
+    - Updated `updateAttendance` storage method to persist attendance in junction table
+    - Fixed `handleSaveAttendance` to call API instead of just closing dialog
 
 - **Phase 4 - PostgreSQL Multi-User Database** (October 20, 2025)
   - Migrated from localStorage to PostgreSQL database for permanent storage

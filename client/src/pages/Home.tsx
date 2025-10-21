@@ -142,10 +142,28 @@ export default function Home() {
     deleteParticipantMutation.mutate(id);
   };
 
-  const handleSaveAttendance = (participantId: string, attendance: boolean[]) => {
-    // TODO: Update attendance tracking for multi-program support
-    // For now, just close the dialog
-    setIsAttendanceOpen(false);
+  const handleSaveAttendance = async (participantId: string, programId: string, attendance: boolean[]) => {
+    try {
+      await apiRequestJson("POST", `/api/participants/${participantId}/attendance`, {
+        programId,
+        attendance,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/participants"] });
+      
+      toast({
+        title: "Attendance saved",
+        description: "Attendance has been updated successfully.",
+      });
+      
+      setIsAttendanceOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save attendance. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openAddForm = () => {
@@ -374,7 +392,11 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="programs" className="space-y-6">
-              <ProgramManagement programs={programs} onProgramsChange={() => queryClient.invalidateQueries({ queryKey: ["/api/programs"] })} />
+              <ProgramManagement 
+                programs={programs} 
+                participants={participants}
+                onProgramsChange={() => queryClient.invalidateQueries({ queryKey: ["/api/programs"] })} 
+              />
             </TabsContent>
 
             <TabsContent value="statistics" className="space-y-6">

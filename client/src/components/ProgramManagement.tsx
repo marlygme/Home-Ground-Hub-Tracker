@@ -37,12 +37,15 @@ import { insertProgramSchema, type Program, type InsertProgram } from "@shared/s
 import { queryClient, apiRequestJson } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+import { ParticipantWithPrograms } from "@shared/schema";
+
 interface ProgramManagementProps {
   programs: Program[];
+  participants: ParticipantWithPrograms[];
   onProgramsChange: () => void;
 }
 
-export function ProgramManagement({ programs, onProgramsChange }: ProgramManagementProps) {
+export function ProgramManagement({ programs, participants, onProgramsChange }: ProgramManagementProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Program | null>(null);
@@ -165,8 +168,7 @@ export function ProgramManagement({ programs, onProgramsChange }: ProgramManagem
   };
 
   const getParticipantCount = (programId: string) => {
-    // This will be updated when we have participants data
-    return 0;
+    return participants.filter(p => p.programs.some(prog => prog.id === programId)).length;
   };
 
   return (

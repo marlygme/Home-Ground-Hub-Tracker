@@ -119,6 +119,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update attendance for a participant in a specific program
+  app.post("/api/participants/:id/attendance", async (req, res) => {
+    try {
+      const { programId, attendance } = req.body;
+      
+      if (!programId || !Array.isArray(attendance)) {
+        return res.status(400).json({ error: "Missing programId or attendance data" });
+      }
+      
+      await storage.updateAttendance(req.params.id, programId, attendance);
+      
+      // Return updated participant
+      const participant = await storage.getParticipantById(req.params.id);
+      res.json(participant);
+    } catch (error) {
+      console.error("Error updating attendance:", error);
+      res.status(500).json({ error: "Failed to update attendance" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
