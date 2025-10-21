@@ -17,14 +17,25 @@ export const participants = pgTable("participants", {
   parentEmail: varchar("parent_email"),
   phoneNumber: varchar("phone_number"),
   age: integer("age").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Junction table for many-to-many relationship between participants and programs
+export const participantPrograms = pgTable("participant_programs", {
+  participantId: varchar("participant_id").notNull().references(() => participants.id, { onDelete: "cascade" }),
   programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: "cascade" }),
   attendance: boolean("attendance").array().notNull().default(sql`ARRAY[]::boolean[]`),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Inferred types from Drizzle schema
 export type Program = typeof programs.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
+export type ParticipantProgram = typeof participantPrograms.$inferSelect;
+
+// Extended types with relations
+export type ParticipantWithPrograms = Participant & {
+  programs: (Program & { attendance: boolean[] })[];
+};
 
 // Insert schemas from Drizzle
 const baseProgramInsertSchema = createInsertSchema(programs);
@@ -39,9 +50,8 @@ export const insertProgramSchema = baseProgramInsertSchema.omit({
 export const insertParticipantSchema = baseParticipantInsertSchema.omit({
   id: true,
   createdAt: true,
-  attendance: true,
 }).extend({
-  attendance: z.array(z.boolean()).optional(),
+  programIds: z.array(z.string()).min(1, "Please select at least one program"),
   parentEmail: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   phoneNumber: z.string()
     .optional()

@@ -1,17 +1,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { insertParticipantSchema, type InsertParticipant, type Participant, type Program } from "@shared/schema";
+import { useEffect, useState } from "react";
+import { insertParticipantSchema, type InsertParticipant, type ParticipantWithPrograms, type Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +16,7 @@ import {
 import { X } from "lucide-react";
 
 interface ParticipantFormProps {
-  participant?: Participant;
+  participant?: ParticipantWithPrograms;
   programs: Program[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -36,6 +30,8 @@ export function ParticipantForm({
   onOpenChange,
   onSubmit,
 }: ParticipantFormProps) {
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+
   const form = useForm<InsertParticipant>({
     resolver: zodResolver(insertParticipantSchema),
     defaultValues: {
@@ -43,35 +39,52 @@ export function ParticipantForm({
       parentEmail: "",
       phoneNumber: "",
       age: 8,
-      programId: programs.length > 0 ? programs[0].id : "",
+      programIds: [],
     },
   });
 
   // Reset form when participant changes or dialog opens
   useEffect(() => {
     if (open) {
+      const existingProgramIds = participant?.programs?.map(p => p.id) || [];
+      setSelectedPrograms(existingProgramIds);
+      
       form.reset(participant
         ? {
             fullName: participant.fullName,
             parentEmail: participant.parentEmail || "",
             phoneNumber: participant.phoneNumber || "",
             age: participant.age,
-            programId: participant.programId,
+            programIds: existingProgramIds,
           }
         : {
             fullName: "",
             parentEmail: "",
             phoneNumber: "",
             age: 8,
-            programId: programs.length > 0 ? programs[0].id : "",
+            programIds: [],
           }
       );
     }
   }, [open, participant, programs, form]);
 
   const handleSubmit = (data: InsertParticipant) => {
-    onSubmit(data);
+    onSubmit({ ...data, programIds: selectedPrograms });
     onOpenChange(false);
+  };
+
+  const toggleProgram = (programId: string) => {
+    setSelectedPrograms(prev => 
+      prev.includes(programId)
+        ? prev.filter(id => id !== programId)
+        : [...prev, programId]
+    );
+    
+    // Update form value for validation
+    const newPrograms = selectedPrograms.includes(programId)
+      ? selectedPrograms.filter(id => id !== programId)
+      : [...selectedPrograms, programId];
+    form.setValue("programIds", newPrograms, { shouldValidate: true });
   };
 
   return (
@@ -177,41 +190,44 @@ export function ParticipantForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="programId" className="font-medium text-sm">
-              Program *
+            <Label className="font-medium text-sm">
+              Programs * (Select at least one)
             </Label>
-            <Select
-              value={form.watch("programId")}
-              onValueChange={(value) => form.setValue("programId", value)}
-            >
-              <SelectTrigger data-testid="select-programId">
-                <SelectValue placeholder="Select program" />
-              </SelectTrigger>
-              <SelectContent>
-                {programs.length === 0 ? (
-                  <SelectItem value="" disabled data-testid="option-no-programs">
-                    No programs available - create one first
-                  </SelectItem>
-                ) : (
-                  programs.map((program) => (
-                    <SelectItem 
-                      key={program.id} 
-                      value={program.id}
-                      data-testid={`option-program-${program.id}`}
+            <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
+              {programs.length === 0 ? (
+                <p className="text-sm text-muted-foreground" data-testid="text-no-programs">
+                  No programs available - create one first
+                </p>
+              ) : (
+                programs.map((program) => (
+                  <div 
+                    key={program.id} 
+                    className="flex items-center space-x-2"
+                    data-testid={`checkbox-program-${program.id}`}
+                  >
+                    <Checkbox
+                      id={`program-${program.id}`}
+                      checked={selectedPrograms.includes(program.id)}
+                      onCheckedChange={() => toggleProgram(program.id)}
+                      data-testid={`input-program-${program.id}`}
+                    />
+                    <label
+                      htmlFor={`program-${program.id}`}
+                      className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                     >
                       {program.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.programId && (
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+            {form.formState.errors.programIds && (
               <p className="text-sm text-destructive">
-                {form.formState.errors.programId.message}
+                {form.formState.errors.programIds.message}
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Assign participant to a program or event
+              Participant can be enrolled in multiple programs
             </p>
           </div>
 

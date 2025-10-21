@@ -1,7 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { db } from "./db";
+import { DbStorage } from "./storage";
 import { insertProgramSchema, insertParticipantSchema } from "@shared/schema";
+
+const storage = new DbStorage(db);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Program routes
