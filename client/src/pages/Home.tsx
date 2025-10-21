@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { StatisticsView } from "@/components/StatisticsView";
 import { ProgramManagement } from "@/components/ProgramManagement";
 import { PrintView } from "@/components/PrintView";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { useTheme } from "@/components/ThemeProvider";
 import { UserPlus, Search, Moon, Sun, Download, Users2, Printer, BarChart3, Calendar, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -191,13 +192,33 @@ export default function Home() {
     setIsAttendanceOpen(true);
   };
 
-  const handleBulkAttendanceSave = (updates: { participantId: string; attendance: boolean[] }[]) => {
-    // TODO: Implement bulk attendance update for multi-program
-    toast({
-      title: "Bulk attendance updated",
-      description: `Updated attendance for ${updates.length} participant(s).`,
-    });
-    setIsBulkAttendanceOpen(false);
+  const handleBulkAttendanceSave = async (updates: { participantId: string; programId: string; attendance: boolean[] }[]) => {
+    try {
+      // Save each attendance update via API
+      await Promise.all(
+        updates.map((update) =>
+          apiRequestJson("POST", `/api/participants/${update.participantId}/attendance`, {
+            programId: update.programId,
+            attendance: update.attendance,
+          })
+        )
+      );
+
+      queryClient.invalidateQueries({ queryKey: ["/api/participants"] });
+
+      toast({
+        title: "Bulk attendance updated",
+        description: `Updated attendance for ${updates.length} participant(s).`,
+      });
+
+      setIsBulkAttendanceOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update bulk attendance. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExportParticipants = () => {
@@ -467,6 +488,8 @@ export default function Home() {
 
       <PrintView participants={participants} programs={programs} type="roster" />
       <PrintView participants={participants} programs={programs} type="attendance" />
+      
+      <ScrollToTop />
     </div>
   );
 }
