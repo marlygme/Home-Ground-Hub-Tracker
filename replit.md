@@ -155,10 +155,11 @@ shared/
   - Added error handling and logging to Cloudflare Functions
   - Added null-safety guards for deleted programs in storage layer
   - **Fixed critical bugs:**
-    - Attendance now saves correctly via new `/api/participants/:id/attendance` endpoint
+    - Created Cloudflare Function for attendance endpoint: `functions/api/participants/[id]/attendance.ts`
     - Programs tab now displays accurate participant counts per program
     - Updated `updateAttendance` storage method to persist attendance in junction table
     - Fixed `handleSaveAttendance` to call API instead of just closing dialog
+    - Added `updateAttendance` to IStorage interface
 
 - **Phase 4 - PostgreSQL Multi-User Database** (October 20, 2025)
   - Migrated from localStorage to PostgreSQL database for permanent storage

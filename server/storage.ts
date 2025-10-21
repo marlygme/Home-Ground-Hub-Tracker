@@ -15,6 +15,7 @@ export interface IStorage {
   getParticipantById(id: string): Promise<ParticipantWithPrograms | undefined>;
   createParticipant(data: InsertParticipant): Promise<ParticipantWithPrograms>;
   updateParticipant(id: string, data: Partial<InsertParticipant>): Promise<ParticipantWithPrograms>;
+  updateAttendance(participantId: string, programId: string, attendance: boolean[]): Promise<void>;
   deleteParticipant(id: string): Promise<void>;
 }
 
