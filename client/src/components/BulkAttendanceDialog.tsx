@@ -157,8 +157,8 @@ export function BulkAttendanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">
             Bulk Attendance Marking
           </DialogTitle>
@@ -173,7 +173,7 @@ export function BulkAttendanceDialog({
           </Button>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 px-6 py-4 overflow-y-auto flex-1">
           <div>
             <h3 className="text-sm font-medium mb-3">1. Filter by Program (Optional)</h3>
             <div className="flex flex-wrap gap-2">
@@ -319,7 +319,7 @@ export function BulkAttendanceDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 px-6 py-4 border-t flex-shrink-0">
           <Button
             type="button"
             variant="ghost"
