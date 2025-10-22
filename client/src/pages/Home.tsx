@@ -19,6 +19,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { useTheme } from "@/components/ThemeProvider";
 import { UserPlus, Search, Moon, Sun, Download, Users2, Printer, BarChart3, Calendar, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import logoImage from "@assets/Home+Ground+Hub+Logo_1761097932942.png";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -254,8 +255,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4 gap-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">⚽</span>
+              <div className="h-12 w-12 rounded-lg bg-white dark:bg-white flex items-center justify-center p-1.5">
+                <img src={logoImage} alt="Home Ground Hub Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-semibold" data-testid="text-app-title">
